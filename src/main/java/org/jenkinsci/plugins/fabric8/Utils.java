@@ -1,12 +1,12 @@
 /**
  * Copyright (C) Original Authors 2017
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -33,19 +33,23 @@ import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.utils.Strings;
 import jenkins.model.Jenkins;
 import org.apache.commons.beanutils.PropertyUtils;
-/*
-import org.csanchez.jenkins.plugins.kubernetes.PodAnnotation;
-*/
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/*
+import org.csanchez.jenkins.plugins.kubernetes.PodAnnotation;
+*/
+
 public class Utils extends CommandSupport {
     private static final long serialVersionUID = 1L;
+
+    private String branch;
 
     public Utils() {
     }
@@ -68,13 +72,16 @@ public class Utils extends CommandSupport {
         return namespace;
     }
 
-
     public static KubernetesClient createKubernetesClient() {
         return new DefaultKubernetesClient();
     }
 
     public static String getNamespace() {
         return defaultNamespace(createKubernetesClient());
+    }
+
+    public void clearCache() {
+        this.branch = null;
     }
 
     @NonCPS
@@ -340,17 +347,19 @@ public class Utils extends CommandSupport {
         return usersNamespace;
     }
 
+
     public String getBranch() {
-        final String branch = getenv("BRANCH_NAME");
-        if (Strings.isNullOrBlank(branch)) {
-/*
-TODO
-            try {
-                return execAndGetOutput("git", "symbolic-ref", "--short", "HEAD").trim();
-            } catch (Exception err) {
-                echo("Unable to get git branch and in a detached HEAD. You may need to select Pipeline additional behaviour and \'Check out to specific local branch\'");
+        if (branch == null) {
+            branch = getenv("BRANCH_NAME");
+            if (Strings.isNullOrBlank(branch)) {
+                //echo("output of ls -al: " + shOutput("ls -al ").trim());
+                try {
+                    branch = shOutput("git symbolic-ref --short HEAD").trim();
+                } catch (Throwable err) {
+                    error("Unable to get git branch and in a detached HEAD. You may need to select Pipeline additional behaviour and \'Check out to specific local branch\'", err);
+                }
             }
-*/
+            echo("current branch is " + branch);
         }
         return branch;
 
@@ -371,7 +380,6 @@ TODO
     }
 
 
-/*
     public Object getLatestVersionFromTag() throws IOException {
         sh("git fetch --tags");
         sh("git config versionsort.prereleaseSuffix -RC");
@@ -391,7 +399,6 @@ TODO
             return null;
         }
     }
-*/
 
     @NonCPS
     public Boolean isValidBuildName(final String buildName) {

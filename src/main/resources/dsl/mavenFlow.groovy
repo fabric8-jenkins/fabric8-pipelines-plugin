@@ -1,5 +1,6 @@
 package dsl
 
+import org.jenkinsci.plugins.fabric8.ShellFacade
 import org.jenkinsci.plugins.fabric8.Utils
 
 // The call(body) method in any file in workflowLibs.git/vars is exposed as a
@@ -10,8 +11,6 @@ def call(body) {
   body.delegate = config
   body()
 
-
-  // TODO
   def utils = createUtils()
 
   def organisationName = "fabric8io"
@@ -19,7 +18,6 @@ def call(body) {
   def groupId = 'io.fabric8.platform.distro'
 
   try {
-    // TODO
     checkout scm
 
     if (utils.isCI() || !utils.isCD()) {
@@ -30,6 +28,7 @@ def call(body) {
     } else if (utils.isCD()) {
       echo 'Performing CD Pipeline'
 
+      // TODO can we figure this out from the current .git folder??
       sh "git remote set-url origin git@github.com:${repoName}.git"
 
       def stagedProject
@@ -71,6 +70,8 @@ def call(body) {
 
 def createUtils() {
   def u = new Utils()
-  u.setEnv(env.environment)
+  u.updateEnvironment(env)
+  u.setShellFacade({ String cmd, boolean returnOutput ->sh(script: cmd, returnStdout: returnOutput).toString().trim()} as ShellFacade)
+  //u.updateSh(shProperty)
   return u
 }

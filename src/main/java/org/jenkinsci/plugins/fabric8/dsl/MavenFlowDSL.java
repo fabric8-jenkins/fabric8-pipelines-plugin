@@ -37,7 +37,13 @@ public class MavenFlowDSL extends PipelineDSLGlobal {
                     "new org.jenkinsci.plugins.fabric8.Fabric8Commands",
                     "new org.jenkinsci.plugins.fabric8.Utils",
 
+                    // for exposing sh()
+                    "method groovy.lang.GroovyObject invokeMethod java.lang.String java.lang.Object",
+
+                    "method org.jenkinsci.plugins.fabric8.CommandSupport updateEnvironment java.lang.Object",
                     "method org.jenkinsci.plugins.fabric8.CommandSupport setEnv java.util.Map",
+                    "method org.jenkinsci.plugins.fabric8.CommandSupport setShellFacade org.jenkinsci.plugins.fabric8.ShellFacade",
+                    "method org.jenkinsci.plugins.fabric8.CommandSupport updateSh java.lang.Object",
                     "method org.jenkinsci.plugins.fabric8.CommandSupport *",
                     "method org.jenkinsci.plugins.fabric8.Utils *",
 

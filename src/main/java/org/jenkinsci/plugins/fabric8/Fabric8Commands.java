@@ -64,36 +64,6 @@ public class Fabric8Commands  extends CommandSupport {
         super(parent);
     }
 
-    /**
-     * Invokes the given command
-     */
-    public void sh(String command) {
-        throw new FailedBuildException("TODO");
-    }
-
-    /**
-     * Returns the output of the given command
-     */
-    public String shOutput(String command) {
-        throw new FailedBuildException("TODO");
-    }
-
-    public File getCurrentDir() {
-        throw new FailedBuildException("TODO");
-    }
-
-    protected String readFile(String s) {
-        throw new FailedBuildException("TODO");
-    }
-
-    private File createFile(String s) {
-        throw new FailedBuildException("TODO");
-    }
-
-    private void hubotSend(String message, String room, boolean failOnError) {
-        throw new FailedBuildException("TODO");
-    }
-    
     public boolean hasGitHubEnvVars() {
         String user = getenv(EnvironmentVariableNames.GITHUB_USER);
         String password = getenv(EnvironmentVariableNames.GITHUB_PASSWORD);
