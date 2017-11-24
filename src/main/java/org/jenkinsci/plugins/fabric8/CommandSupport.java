@@ -65,14 +65,17 @@ public abstract class CommandSupport implements Serializable {
         if (envVar instanceof EnvActionImpl) {
             EnvActionImpl envAction = (EnvActionImpl) envVar;
             Map<String, String> map = envAction.getOverriddenEnvironment();
+            if (map == null || map.isEmpty()) {
+                try {
+                    map = envAction.getEnvironment();
+                } catch (Exception e) {
+                    error("Failed to getEnvironment() from EnvActionImpl " + envAction, e);
+                }
+            }
             setEnv(map);
         } else if (envVar instanceof Map) {
             setEnv((Map<String, String>) envVar);
         }
-    }
-
-    public void updateSh(Object value) {
-        echo("===== updateSh passed in " + value + " " + (value != null ? value.getClass().getName() : ""));
     }
 
     public String getenv(String name) {
@@ -87,7 +90,18 @@ public abstract class CommandSupport implements Serializable {
         if (shell == null) {
             throw new IllegalArgumentException("No shellFacade has been injected into " + this + " so cannot invoke sh(" + command + ")");
         }
-        shell.apply(command, false);
+        shell.apply(command, false, null);
+    }
+
+    /**
+     * Invokes the given command
+     */
+    public void containerSh(String containerName, String command) {
+        ShellFacade shell = getShellFacade();
+        if (shell == null) {
+            throw new IllegalArgumentException("No shellFacade has been injected into " + this + " so cannot invoke sh(" + command + ") in container " + containerName);
+        }
+        shell.apply(command, false, containerName);
     }
 
     /**
@@ -98,7 +112,18 @@ public abstract class CommandSupport implements Serializable {
         if (shell == null) {
             throw new IllegalArgumentException("No shellFacade has been injected into " + this + " so cannot invoke sh(" + command + ")");
         }
-        return shell.apply(command, false).trim();
+        return shell.apply(command, false, null).trim();
+    }
+
+    /**
+     * Returns the output of the given command
+     */
+    public String containerShOutput(String containerName, String command) {
+        ShellFacade shell = getShellFacade();
+        if (shell == null) {
+            throw new IllegalArgumentException("No shellFacade has been injected into " + this + " so cannot invoke sh(" + command + ") in container " + containerName);
+        }
+        return shell.apply(command, false, containerName).trim();
     }
 
 

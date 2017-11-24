@@ -20,5 +20,5 @@ package org.jenkinsci.plugins.fabric8;
  * An adapter to invoking shell commands
  */
 public interface ShellFacade {
-    String apply(String cmd, boolean returnStdout);
+    String apply(String cmd, boolean returnStdout, String containerName);
 }

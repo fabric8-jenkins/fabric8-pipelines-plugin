@@ -66,7 +66,12 @@ public class Logger {
     }
 
     public void error(String message, Throwable t) {
-        PrintStream o = err();
+        PrintStream o = out();
+        PrintStream e = err();
+
+        e.println("ERROR: " + message + " " + t);
+        t.printStackTrace(e);
+
         o.println("ERROR: " + message + " " + t);
         t.printStackTrace(o);
     }

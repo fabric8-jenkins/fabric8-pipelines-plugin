@@ -352,11 +352,16 @@ public class Utils extends CommandSupport {
         if (branch == null) {
             branch = getenv("BRANCH_NAME");
             if (Strings.isNullOrBlank(branch)) {
-                //echo("output of ls -al: " + shOutput("ls -al ").trim());
                 try {
-                    branch = shOutput("git symbolic-ref --short HEAD").trim();
-                } catch (Throwable err) {
-                    error("Unable to get git branch and in a detached HEAD. You may need to select Pipeline additional behaviour and \'Check out to specific local branch\'", err);
+                    echo("output of git --version: " + containerShOutput("clients", "git --version").trim());
+                    echo("pwd: " + containerShOutput("clients", "pwd").trim());
+                } catch (Throwable e) {
+                    error("Failed to invoke git --version: " + e, e);
+                }
+                try {
+                    branch = containerShOutput("clients", "git symbolic-ref --short HEAD").trim();
+                } catch (Throwable e) {
+                    error("\nUnable to get git branch and in a detached HEAD. You may need to select Pipeline additional behaviour and \'Check out to specific local branch\': " + e, e);
                 }
             }
             echo("current branch is " + branch);

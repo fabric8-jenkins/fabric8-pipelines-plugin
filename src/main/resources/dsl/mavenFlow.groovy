@@ -71,7 +71,16 @@ def call(body) {
 def createUtils() {
   def u = new Utils()
   u.updateEnvironment(env)
-  u.setShellFacade({ String cmd, boolean returnOutput ->sh(script: cmd, returnStdout: returnOutput).toString().trim()} as ShellFacade)
-  //u.updateSh(shProperty)
+  u.setShellFacade({ String cmd, boolean returnOutput, String containerName ->
+    if (containerName) {
+      def answer
+      container(containerName) {
+        answer = sh(script: cmd, returnStdout: returnOutput).toString().trim()
+      }
+      return answer
+    } else {
+      return sh(script: cmd, returnStdout: returnOutput).toString().trim()
+    }
+  } as ShellFacade)
   return u
 }
