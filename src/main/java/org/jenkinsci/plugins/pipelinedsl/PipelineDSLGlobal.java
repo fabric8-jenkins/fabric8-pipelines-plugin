@@ -17,7 +17,6 @@ package org.jenkinsci.plugins.pipelinedsl;
 
 import groovy.lang.Binding;
 import groovy.lang.GroovyCodeSource;
-import groovy.lang.Script;
 import org.jenkinsci.plugins.workflow.cps.CpsScript;
 import org.jenkinsci.plugins.workflow.cps.CpsThread;
 import org.jenkinsci.plugins.workflow.cps.GlobalVariable;
@@ -25,8 +24,6 @@ import org.jenkinsci.plugins.workflow.cps.GlobalVariable;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.util.HashMap;
-import java.util.Map;
 
 public abstract class PipelineDSLGlobal extends GlobalVariable {
 

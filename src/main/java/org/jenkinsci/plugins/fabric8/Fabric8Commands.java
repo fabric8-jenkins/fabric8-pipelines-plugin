@@ -48,11 +48,11 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static java.lang.Integer.parseInt;
 import static org.jenkinsci.plugins.fabric8.Utils.createKubernetesClient;
 import static org.jenkinsci.plugins.fabric8.Utils.defaultNamespace;
-import static java.lang.Integer.parseInt;
 
-public class Fabric8Commands  extends CommandSupport {
+public class Fabric8Commands extends CommandSupport {
     private static final long serialVersionUID = 1L;
 
     private boolean debugSemVerReleaseVersion = false;
@@ -365,7 +365,7 @@ public class Fabric8Commands  extends CommandSupport {
             return null;
         }
         for (int i = 0; i < last; i++) {
-           echo("semver-release-number> " + lines[i]);
+            echo("semver-release-number> " + lines[i]);
         }
         return lines[last];
     }

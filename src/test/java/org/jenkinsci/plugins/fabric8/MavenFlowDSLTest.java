@@ -71,7 +71,9 @@ public class MavenFlowDSLTest {
             public void evaluate() throws Throwable {
                 WorkflowJob p = story.j.jenkins.createProject(WorkflowJob.class, "p");
 
-                p.setDefinition(new CpsScmFlowDefinition(new GitStep("https://github.com/jstrachan/test-maven-flow-project.git").createSCM(), "Jenkinsfile"));
+                GitStep gitStep = new GitStep("https://github.com/jstrachan/test-maven-flow-project.git");
+                gitStep.setBranch("scripted");
+                p.setDefinition(new CpsScmFlowDefinition(gitStep.createSCM(), "Jenkinsfile"));
                 WorkflowRun b = p.scheduleBuild2(0).waitForStart();
                 story.j.assertLogContains("Finished: SUCCESS",
                         story.j.assertBuildStatusSuccess(story.j.waitForCompletion(b)));

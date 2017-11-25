@@ -2,6 +2,7 @@ package dsl
 
 import org.jenkinsci.plugins.fabric8.ShellFacade
 import org.jenkinsci.plugins.fabric8.Utils
+import org.jenkinsci.plugins.fabric8.steps.MavenFlow
 
 // The call(body) method in any file in workflowLibs.git/vars is exposed as a
 // method with the same name as the file.
@@ -20,7 +21,9 @@ def call(body) {
   try {
     checkout scm
 
-    if (utils.isCI() || !utils.isCD()) {
+    MavenFlow.perform(utils);
+
+/*    if (utils.isCI() || !utils.isCD()) {
       echo 'Performing CI Pipeline'
 
       sh "mvn clean install -U"
@@ -54,13 +57,12 @@ def call(body) {
           imagesToPromoteToDockerHub = []
           extraImagesToTag = null
         }
-      }
+      }*/
 /*
       stage('Promote YAMLs') {
         pipeline.promoteYamls(stagedProject[1])
       }
       */
-    }
   } catch (err) {
     //hubot room: 'release', message: "${env.JOB_NAME} failed: ${err}"
     error "${err}"

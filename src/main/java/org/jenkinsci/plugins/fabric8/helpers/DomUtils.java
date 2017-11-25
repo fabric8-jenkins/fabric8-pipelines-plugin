@@ -25,7 +25,6 @@ import org.w3c.dom.NodeList;
 import java.net.URL;
 
 
-
 /**
  */
 public class DomUtils {
@@ -59,7 +58,7 @@ public class DomUtils {
         try {
             doc = XmlUtils.parseDoc(new URL(url).openStream());
         } catch (Exception e) {
-            logger.error( "Failed to parse pom.xml", e);
+            logger.error("Failed to parse pom.xml", e);
             return null;
         }
         return firstElementText(logger, doc, elementName, url);

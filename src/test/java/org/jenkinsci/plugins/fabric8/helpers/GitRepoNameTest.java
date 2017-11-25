@@ -13,11 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jenkinsci.plugins.fabric8;
+package org.jenkinsci.plugins.fabric8.helpers;
+
+import org.junit.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * An adapter to invoking shell commands
  */
-public interface ShellFacade {
-    String apply(String cmd, boolean returnStdout, String containerName);
+public class GitRepoNameTest {
+    public static void assertGitRepoName(String project, String expectedRepoName) {
+        String repoName = GitHelper.getRepoName(project);
+        assertThat(repoName).describedAs("Repo name for project: " + project).isEqualTo(expectedRepoName);
+    }
+
+    @Test
+    public void testRepoName() throws Exception {
+        assertGitRepoName("foo/bar", "bar");
+        assertGitRepoName("foobar", "foobar");
+    }
+
 }

@@ -24,13 +24,4 @@ public class ServiceConstants {
     public static final String MAVEN_CENTRAL = "http://central.maven.org/maven2/";
     public static final String JENKINS_ARCHIVE_REPO = "http://archives.jenkins-ci.org/";
 
-/*
-    public static String getDockerRegistryPort() {
-        return Systems.getEnvVar("FABRIC8_DOCKER_REGISTRY_SERVICE_PORT", FABRIC8_DOCKER_REGISTRY_PORT);
-    }
-
-    public static String getDockerRegistryHost() {
-        return Systems.getEnvVar("FABRIC8_DOCKER_REGISTRY_SERVICE_HOST", FABRIC8_DOCKER_REGISTRY);
-    }
-*/
 }
