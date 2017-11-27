@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jenkinsci.plugins.pipelinedsl;
+package org.jenkinsci.plugins.fabric8.dsl;
 
 import groovy.lang.Binding;
 import groovy.lang.GroovyCodeSource;
@@ -46,12 +46,7 @@ public abstract class PipelineDSLGlobal extends GlobalVariable {
 
         ClassLoader cl = getClass().getClassLoader();
 
-/*
-        Object fabric8Utils = loadFunction(binding, c, cl, "fabric8Utils");
-        Object fabric8Commands = loadFunction(binding, c, cl, "fabric8Commands");
-*/
-        Object function = loadFunction(binding, c, cl, getFunctionName());
-        return function;
+        return loadFunction(binding, c, cl, getFunctionName());
     }
 
     private Object loadFunction(Binding binding, CpsThread c, ClassLoader cl, String functionName) throws IOException, InstantiationException, IllegalAccessException {
@@ -67,38 +62,6 @@ public abstract class PipelineDSLGlobal extends GlobalVariable {
                     .parseClass(gsc)
                     .newInstance();
             binding.setVariable(functionName, pipelineDSL);
-
-/*
-            // TODO better place to get the env vars from?
-            Map<String, String> envVars = new HashMap<>(System.getenv());
-
-            if (pipelineDSL instanceof Script) {
-                Script dslScript = (Script) pipelineDSL;
-                System.out.println("\n\n==== DSL is a script!");
-
-
-                Binding dslBinding = dslScript.getBinding();
-
-
-                Object env = null;
-                try {
-                    env = dslBinding.getProperty("env");
-                } catch (Exception e) {
-                    // ignore
-                }
-                if (env == null) {
-                    System.out.println("\n\n==== DSL has no env property!");
-                    dslBinding.setProperty("env", envVars);
-                    System.out.println("\n\n==== env property set!");
-                } else {
-                    System.out.println("==== DSL has an env property");
-                }
-
-            } else {
-                System.out.println("\n\n==== DSL is NOT a script!");
-            }
-
-*/
             return pipelineDSL;
         }
     }

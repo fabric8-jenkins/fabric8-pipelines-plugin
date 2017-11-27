@@ -6,22 +6,37 @@ import org.jenkinsci.plugins.fabric8.steps.MavenFlow
 
 // The call(body) method in any file in workflowLibs.git/vars is exposed as a
 // method with the same name as the file.
-def call(body) {
+def call(Map config = [:], body) {
+/*
   def config = [:]
   body.resolveStrategy = Closure.DELEGATE_FIRST
   body.delegate = config
+*/
   body()
+
+  echo "==== mavenFlow invoked with config ${config}"
 
   def utils = createUtils()
 
+  def pauseOnFailure = config.get('pauseOnFailure', false)
+  def pauseOnSuccess = config.get('pauseOnSuccess', false)
+/*
   def organisationName = "fabric8io"
   def repoName = '${organisationName}/fabric8-platform'
   def groupId = 'io.fabric8.platform.distro'
+*/
 
   try {
     checkout scm
 
+    def branch = getBranch()
+    utils.setBranch(branch)
+
     MavenFlow.perform(utils);
+
+    if (pauseOnSuccess) {
+      input message: 'The build pod has been paused'
+    }
 
 /*    if (utils.isCI() || !utils.isCD()) {
       echo 'Performing CI Pipeline'
@@ -66,6 +81,10 @@ def call(body) {
   } catch (err) {
     //hubot room: 'release', message: "${env.JOB_NAME} failed: ${err}"
     error "${err}"
+
+    if (pauseOnFailure) {
+      input message: 'The build pod has been paused'
+    }
   }
 }
 
@@ -85,4 +104,49 @@ def createUtils() {
     }
   } as ShellFacade)
   return u
+}
+
+def getBranch() {
+  def branch = env.BRANCH_NAME
+  if (!branch) {
+    container("clients") {
+      try {
+        echo("output of git --version: " + sh(script: "git --version", returnStdout: true));
+        echo("pwd: " + sh(script: "pwd", returnStdout: true));
+      } catch (e) {
+        error("Failed to invoke git --version: " + e, e);
+      }
+      if (!branch) {
+        def head = null
+        try {
+          head = sh(script: "git rev-parse HEAD", returnStdout: true)
+        } catch (e) {
+          error("Failed to load: git rev-parse HEAD: " + e, e)
+        }
+        if (head) {
+          head = head.trim()
+          try {
+            def text = sh(script: "git ls-remote --heads origin | grep ${head} | cut -d / -f 3", returnStdout: true)
+            if (text) {
+              branch = text.trim();
+            }
+          } catch (e) {
+            error("\nUnable to get git branch: " + e, e);
+          }
+        }
+      }
+      if (!branch) {
+        try {
+          def text = sh(script: "git symbolic-ref --short HEAD", returnStdout: true)
+          if (text) {
+            branch = text.trim();
+          }
+        } catch (e) {
+          error("\nUnable to get git branch and in a detached HEAD. You may need to select Pipeline additional behaviour and \'Check out to specific local branch\': " + e, e);
+        }
+      }
+    }
+    echo "Found branch ${branch}"
+    return branch;
+  }
 }

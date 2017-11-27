@@ -1,12 +1,12 @@
 /**
  * Copyright (C) Original Authors 2017
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -353,21 +353,33 @@ public class Utils extends CommandSupport {
             branch = getenv("BRANCH_NAME");
             if (Strings.isNullOrBlank(branch)) {
                 try {
-                    echo("output of git --version: " + containerShOutput("clients", "git --version").trim());
-                    echo("pwd: " + containerShOutput("clients", "pwd").trim());
+                    echo("output of git --version: " + containerShOutput("clients", "git --version"));
+                    echo("pwd: " + containerShOutput("clients", "pwd"));
                 } catch (Throwable e) {
                     error("Failed to invoke git --version: " + e, e);
                 }
+                try {
+                    branch = containerShOutput("clients", "git ls-remote --heads origin | grep $(git rev-parse HEAD) | cut -d / -f 3").trim();
+                } catch (Throwable e) {
+                    error("\nUnable to get git branch: " + e, e);
+                }
+            }
+            if (Strings.isNullOrBlank(branch)) {
                 try {
                     branch = containerShOutput("clients", "git symbolic-ref --short HEAD").trim();
                 } catch (Throwable e) {
                     error("\nUnable to get git branch and in a detached HEAD. You may need to select Pipeline additional behaviour and \'Check out to specific local branch\': " + e, e);
                 }
             }
-            echo("current branch is " + branch);
+            echo("current git branch is " + branch);
         }
         return branch;
 
+    }
+
+    public void setBranch(String branch) {
+        echo("the current git branch is " + branch);
+        this.branch = branch;
     }
 
     public boolean isCI() {

@@ -16,7 +16,6 @@
 package org.jenkinsci.plugins.fabric8.dsl;
 
 import hudson.Extension;
-import org.jenkinsci.plugins.pipelinedsl.PipelineDSLGlobal;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.ProxyWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.StaticWhitelist;
 
@@ -48,6 +47,7 @@ public class MavenFlowDSL extends PipelineDSLGlobal {
                     "method org.jenkinsci.plugins.fabric8.CommandSupport setShellFacade org.jenkinsci.plugins.fabric8.ShellFacade",
                     "method org.jenkinsci.plugins.fabric8.CommandSupport updateSh java.lang.Object",
                     "method org.jenkinsci.plugins.fabric8.CommandSupport *",
+                    "method org.jenkinsci.plugins.fabric8.Utils setBranch java.lang.String",
                     "method org.jenkinsci.plugins.fabric8.Utils *",
 
                     "method java.util.Map$Entry getKey",

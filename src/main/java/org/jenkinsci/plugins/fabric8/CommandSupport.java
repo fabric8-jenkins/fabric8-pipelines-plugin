@@ -128,7 +128,11 @@ public abstract class CommandSupport implements Serializable {
         if (shell == null) {
             throw new IllegalArgumentException("No shellFacade has been injected into " + this + " so cannot invoke sh(" + command + ")");
         }
-        return shell.apply(command, false, this.containerName).trim();
+        String answer = shell.apply(command, false, this.containerName);
+        if (answer == null) {
+            return "";
+        }
+        return answer.trim();
     }
 
     /**
@@ -139,7 +143,11 @@ public abstract class CommandSupport implements Serializable {
         if (shell == null) {
             throw new IllegalArgumentException("No shellFacade has been injected into " + this + " so cannot invoke sh(" + command + ") in container " + containerName);
         }
-        return shell.apply(command, false, containerName).trim();
+        String answer = shell.apply(command, false, containerName);
+        if (answer == null) {
+            return "";
+        }
+        return answer.trim();
     }
 
     /**
