@@ -15,14 +15,21 @@
  */
 package org.jenkinsci.plugins.fabric8.helpers;
 
+import io.fabric8.utils.IOHelpers;
 import io.fabric8.utils.Strings;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  */
@@ -116,5 +123,83 @@ public class GitHelper {
             }
         }
         return project;
+    }
+
+    /**
+     * Returns the remote git URL for the given folder; looking for the .git/config file in the current directory or a parent directory
+     */
+    public static String extractGitUrl(File basedir) throws IOException {
+        if (basedir.exists() && basedir.isDirectory()) {
+            File gitConfig = new File(basedir, ".git/config");
+            if (gitConfig.isFile() && gitConfig.exists()) {
+                String text = IOHelpers.readFully(gitConfig);
+                if (text != null) {
+                    return extractGitUrl(text);
+                }
+            } else {
+                System.out.println("===== no .git/config file not found for " + gitConfig.getPath());
+            }
+        } else {
+            System.out.println("===== could not find basedir " + basedir.getPath());
+        }
+        File parentFile = basedir.getParentFile();
+        if (parentFile != null) {
+            return extractGitUrl(parentFile);
+        }
+        return null;
+    }
+
+
+    /**
+     * Returns the remote git URL for the given git config file text lets extract the
+     */
+    public static String extractGitUrl(String configText) {
+        String remote = null;
+        String lastUrl = null;
+        String firstUrl = null;
+        BufferedReader reader = new BufferedReader(new StringReader(configText));
+        Map<String, String> remoteUrls = new HashMap<>();
+        while (true) {
+            String line = null;
+            try {
+                line = reader.readLine();
+            } catch (IOException e) {
+                // ignore should never happen!
+            }
+            if (line == null) {
+                break;
+            }
+            if (line.startsWith("[remote ")) {
+                String[] parts = line.split("\"");
+                if (parts.length > 1) {
+                    remote = parts[1];
+                }
+            } else if (line.startsWith("[")) {
+                remote = null;
+            } else if (remote != null && line.length() > 0 && Character.isWhitespace(line.charAt(0))) {
+                String trimmed = line.trim();
+                if (trimmed.startsWith("url ")) {
+                    String[] parts = trimmed.split("=", 2);
+                    if (parts.length > 1) {
+                        lastUrl = parts[1].trim();
+                        if (firstUrl == null) {
+                            firstUrl = lastUrl;
+                        }
+                        remoteUrls.put(remote, lastUrl);
+                    }
+                }
+
+            }
+        }
+        String answer = null;
+        if (remoteUrls.size() == 1) {
+            return lastUrl;
+        } else if (remoteUrls.size() > 1) {
+            answer = remoteUrls.get("origin");
+            if (answer == null) {
+                answer = firstUrl;
+            }
+        }
+        return answer;
     }
 }

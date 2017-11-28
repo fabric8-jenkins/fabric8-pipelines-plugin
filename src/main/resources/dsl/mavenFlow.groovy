@@ -1,25 +1,38 @@
 package dsl
 
+import com.cloudbees.groovy.cps.NonCPS
+import org.jenkinsci.plugins.fabric8.FileReadFacade
 import org.jenkinsci.plugins.fabric8.ShellFacade
 import org.jenkinsci.plugins.fabric8.Utils
 import org.jenkinsci.plugins.fabric8.steps.MavenFlow
 
 // The call(body) method in any file in workflowLibs.git/vars is exposed as a
 // method with the same name as the file.
+def call(Map config = [:]) {
+/*
 def call(Map config = [:], body) {
+*/
 /*
   def config = [:]
   body.resolveStrategy = Closure.DELEGATE_FIRST
   body.delegate = config
 */
+/*
   body()
+*/
 
-  echo "==== mavenFlow invoked with config ${config}"
+  echo "mavenFlow ${config}"
 
-  def utils = createUtils()
 
   def pauseOnFailure = config.get('pauseOnFailure', false)
   def pauseOnSuccess = config.get('pauseOnSuccess', false)
+
+/*
+  def arguments = new MavenFlow.Arguments(config)
+  def pauseOnFailure = arguments.isPauseOnFailure()
+  def pauseOnSuccess = arguments.isPauseOnSuccess()
+*/
+/*
 /*
   def organisationName = "fabric8io"
   def repoName = '${organisationName}/fabric8-platform'
@@ -29,10 +42,11 @@ def call(Map config = [:], body) {
   try {
     checkout scm
 
-    def branch = getBranch()
+    def utils = createUtils()
+    def branch = findBranch()
     utils.setBranch(branch)
 
-    MavenFlow.perform(utils);
+    MavenFlow.perform(utils, config);
 
     if (pauseOnSuccess) {
       input message: 'The build pod has been paused'
@@ -89,9 +103,10 @@ def call(Map config = [:], body) {
 }
 
 
-def createUtils() {
+Utils createUtils() {
   def u = new Utils()
   u.updateEnvironment(env)
+
   u.setShellFacade({ String cmd, boolean returnOutput, String containerName ->
     if (containerName) {
       def answer
@@ -103,10 +118,30 @@ def createUtils() {
       return sh(script: cmd, returnStdout: returnOutput).toString().trim()
     }
   } as ShellFacade)
+
+  u.setFileReadFacade({ String path ->
+    return doReadFile(path)
+  } as FileReadFacade)
+
+  def path = sh(script: "pwd", returnStdout: true)
+  if (path) {
+    println "Currnet path is ${pwd}"
+    u.setCurrentPath(path.trim())
+  }
   return u
 }
 
-def getBranch() {
+String doReadFile(String path) {
+  println("mavenFlow.doReadFile on ${path}")
+  def answer = readFile(path)
+  println("mavenFlow.doReadFile result: ${answer}")
+  if (answer != null) {
+    return answer.toString()
+  }
+  return null
+}
+
+String findBranch() {
   def branch = env.BRANCH_NAME
   if (!branch) {
     container("clients") {

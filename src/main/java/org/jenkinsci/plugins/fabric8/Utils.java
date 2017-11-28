@@ -33,9 +33,11 @@ import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.utils.Strings;
 import jenkins.model.Jenkins;
 import org.apache.commons.beanutils.PropertyUtils;
+import org.jenkinsci.plugins.fabric8.helpers.GitHelper;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -48,6 +50,7 @@ import org.csanchez.jenkins.plugins.kubernetes.PodAnnotation;
 
 public class Utils extends CommandSupport {
     private static final long serialVersionUID = 1L;
+    public static final String CLIENTS = "clients";
 
     private String branch;
 
@@ -353,20 +356,20 @@ public class Utils extends CommandSupport {
             branch = getenv("BRANCH_NAME");
             if (Strings.isNullOrBlank(branch)) {
                 try {
-                    echo("output of git --version: " + containerShOutput("clients", "git --version"));
-                    echo("pwd: " + containerShOutput("clients", "pwd"));
+                    echo("output of git --version: " + containerShOutput(CLIENTS, "git --version"));
+                    echo("pwd: " + containerShOutput(CLIENTS, "pwd"));
                 } catch (Throwable e) {
                     error("Failed to invoke git --version: " + e, e);
                 }
                 try {
-                    branch = containerShOutput("clients", "git ls-remote --heads origin | grep $(git rev-parse HEAD) | cut -d / -f 3").trim();
+                    branch = containerShOutput(CLIENTS, "git ls-remote --heads origin | grep $(git rev-parse HEAD) | cut -d / -f 3").trim();
                 } catch (Throwable e) {
                     error("\nUnable to get git branch: " + e, e);
                 }
             }
             if (Strings.isNullOrBlank(branch)) {
                 try {
-                    branch = containerShOutput("clients", "git symbolic-ref --short HEAD").trim();
+                    branch = containerShOutput(CLIENTS, "git symbolic-ref --short HEAD").trim();
                 } catch (Throwable e) {
                     error("\nUnable to get git branch and in a detached HEAD. You may need to select Pipeline additional behaviour and \'Check out to specific local branch\': " + e, e);
                 }
@@ -708,6 +711,57 @@ public Object getDownstreamProjectOverrides(Object downstreamProject){
         return null;
     }
 
+    public String findGitCloneURL() {
+        String text = getGitConfigFile(getCurrentDir());
+        if (Strings.isNullOrBlank(text)) {
+            text = doReadPath(".git/config");
+        }
+        System.out.println("\nfindGitCloneURL() text: " + text);
+        if (Strings.notEmpty(text)) {
+            return GitHelper.extractGitUrl(text);
+        }
+        return null;
+    }
+
+
+    protected String getGitConfigFile(File dir) {
+        String path = new File(dir, ".git/config").getAbsolutePath();
+        String text = doReadPath(path);
+/*
+        String command = "cat " + path;
+        try {
+            echo("trying: " + command);
+            text = containerShOutput(CLIENTS, command);
+
+            echo("result: " + text);
+        } catch (Throwable e) {
+            error("Failed to invoke `" + command + "` due to " + e, e);
+        }
+*/
+        if (text != null) {
+            text = text.trim();
+            if (text.length() > 0) {
+                return text;
+            }
+        }
+        File file = dir.getParentFile();
+        if (file != null) {
+            return getGitConfigFile(file);
+        }
+        return null;
+    }
+
+    private String doReadPath(String path) {
+        String text = null;
+        try {
+            echo("Utils.doReadPath " + path);
+            text = readFile(path);
+            echo("Utils.doReadPath " + path + " = " + text);
+        } catch (Exception e) {
+            error("Failed to read path " + path + " due to " + e, e);
+        }
+        return text;
+    }
 /*
     public boolean isKubernetesPluginVersion013() {
         boolean isNewVersion = false;

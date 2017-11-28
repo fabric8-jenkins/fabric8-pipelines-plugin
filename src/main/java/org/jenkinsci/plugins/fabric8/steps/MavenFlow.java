@@ -15,6 +15,7 @@
  */
 package org.jenkinsci.plugins.fabric8.steps;
 
+import com.cloudbees.groovy.cps.NonCPS;
 import io.fabric8.utils.Strings;
 import io.jenkins.functions.Argument;
 import io.jenkins.functions.Step;
@@ -24,12 +25,14 @@ import org.jenkinsci.plugins.fabric8.Logger;
 import org.jenkinsci.plugins.fabric8.Utils;
 import org.jenkinsci.plugins.fabric8.helpers.GitHelper;
 import org.jenkinsci.plugins.fabric8.helpers.GitRepositoryInfo;
+import org.jenkinsci.plugins.fabric8.helpers.MapHelpers;
 import org.jenkinsci.plugins.fabric8.model.ServiceConstants;
 import org.jenkinsci.plugins.fabric8.model.StagedProjectInfo;
 
 import javax.validation.constraints.NotEmpty;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 /**
@@ -39,14 +42,17 @@ import java.util.function.Function;
 public class MavenFlow extends CommandSupport implements Function<MavenFlow.Arguments, Boolean> {
     private final Utils utils;
 
+
     public MavenFlow(Utils utils) {
         super(utils);
         this.utils = utils;
     }
 
-    public static Boolean perform(Utils utils) {
+    @NonCPS
+    public static Boolean perform(Utils utils, Map map) {
+        Arguments arguments = Arguments.newInstance(map);
         MavenFlow flow = new MavenFlow(utils);
-        return flow.apply();
+        return flow.apply(arguments);
     }
 
     public Boolean apply() {
@@ -64,14 +70,63 @@ public class MavenFlow extends CommandSupport implements Function<MavenFlow.Argu
     public Boolean apply(Arguments arguments) {
         // TODO
         //checkoutScm();
-        if (utils.isCI()) {
+        if (isCi(arguments)) {
             return ciPipeline(arguments);
-        } else if (utils.isCD()) {
+        } else if (isCD(arguments)) {
             return cdPipeline(arguments);
         } else {
             // for now lets assume a CI pipeline
             return ciPipeline(arguments);
         }
+    }
+
+    public boolean isCD(Arguments arguments) {
+        Boolean flag = utils.isCD();
+        if (flag && flag.booleanValue()) {
+            return true;
+        }
+        String organisation = arguments.getCdOrganisation();
+        List<String> cdBranches = arguments.getCdBranches();
+        System.out.println("=== invoked with organisation " + organisation + " branches " + cdBranches);
+        if (cdBranches != null && cdBranches.size() > 0 && Strings.notEmpty(organisation)) {
+            if (cdBranches.contains(utils.getBranch())) {
+                String gitUrl = findGitCloneURL(arguments);
+                if (Strings.isNotBlank(gitUrl)) {
+                    GitRepositoryInfo info = GitHelper.parseGitRepositoryInfo(gitUrl);
+                    if (info != null) {
+                        boolean answer = organisation.equals(info.getOrganisation());
+                        if (!answer) {
+                            echo("Not a CD pipeline as the organisation is " + info.getOrganisation() + " instead of " + organisation);
+                        }
+                        return answer;
+                    }
+                } else {
+                    warning("No git URL could be found so assuming not a CD pipeline");
+                }
+            }
+        } else {
+                warning("No cdOrganisation or cdBranches configured so assuming not a CD pipeline");
+            }
+        return false;
+    }
+
+    public boolean isCi(Arguments arguments) {
+        boolean value = utils.isCI();
+        if (value) {
+            return true;
+        }
+        
+        // TODO for now should we return true if CD is false?
+        return !isCD(arguments);
+    }
+
+    public String findGitCloneURL(Arguments arguments) {
+        String answer = arguments.getGitCloneUrl();
+        if (Strings.isNullOrBlank(answer)) {
+            answer = utils.findGitCloneURL();
+            arguments.setGitCloneUrl(answer);
+        }
+        return answer;
     }
 
     /**
@@ -107,6 +162,17 @@ public class MavenFlow extends CommandSupport implements Function<MavenFlow.Argu
         @NotEmpty
         @Argument
         private String gitCloneUrl = "";
+        @NotEmpty
+        @Argument
+        private String cdOrganisation = "";
+        @Argument
+        private List<String> cdBranches = new ArrayList<>();
+
+        @Argument
+        private boolean pauseOnFailure = false;
+        @Argument
+        private boolean pauseOnSuccess = false;
+
         @Argument
         private boolean useGitTagForNextVersion = false;
         @Argument
@@ -133,6 +199,17 @@ public class MavenFlow extends CommandSupport implements Function<MavenFlow.Argu
         @Argument
         private String artifactIdToWaitFor = "";
 
+
+        // TODO we could code generate this method?
+        public static Arguments newInstance(Map map) {
+            Arguments arguments = new Arguments();
+            arguments.setCdOrganisation(MapHelpers.getString(map, "cdOrganisation", ""));
+            arguments.setCdBranches(MapHelpers.getList(map, "cdBranches"));
+            arguments.setPauseOnFailure(MapHelpers.getBool(map, "pauseOnFailure"));
+            arguments.setPauseOnSuccess(MapHelpers.getBool(map, "pauseOnSuccess"));
+            // TODO other properties...
+            return arguments;
+        }
 
         public String getGitCloneUrl() {
             return gitCloneUrl;
@@ -263,6 +340,38 @@ public class MavenFlow extends CommandSupport implements Function<MavenFlow.Argu
 
         public void setArtifactIdToWaitFor(String artifactIdToWaitFor) {
             this.artifactIdToWaitFor = artifactIdToWaitFor;
+        }
+
+        public boolean isPauseOnFailure() {
+            return pauseOnFailure;
+        }
+
+        public void setPauseOnFailure(boolean pauseOnFailure) {
+            this.pauseOnFailure = pauseOnFailure;
+        }
+
+        public boolean isPauseOnSuccess() {
+            return pauseOnSuccess;
+        }
+
+        public void setPauseOnSuccess(boolean pauseOnSuccess) {
+            this.pauseOnSuccess = pauseOnSuccess;
+        }
+
+        public String getCdOrganisation() {
+            return cdOrganisation;
+        }
+
+        public void setCdOrganisation(String cdOrganisation) {
+            this.cdOrganisation = cdOrganisation;
+        }
+
+        public List<String> getCdBranches() {
+            return cdBranches;
+        }
+
+        public void setCdBranches(List<String> cdBranches) {
+            this.cdBranches = cdBranches;
         }
     }
 }

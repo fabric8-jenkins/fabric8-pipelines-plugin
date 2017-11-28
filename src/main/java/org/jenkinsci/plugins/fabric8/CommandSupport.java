@@ -15,6 +15,7 @@
  */
 package org.jenkinsci.plugins.fabric8;
 
+import com.cloudbees.groovy.cps.NonCPS;
 import io.fabric8.utils.IOHelpers;
 import io.fabric8.utils.Strings;
 import io.fabric8.utils.Systems;
@@ -39,6 +40,7 @@ public abstract class CommandSupport implements Serializable {
     private transient Logger logger = Logger.getInstance();
     private transient Map<String, String> env = createEnv();
     private transient ShellFacade shellFacade;
+    private transient FileReadFacade fileReadFacade;
     private File currentDir = new File(".");
     private String containerName;
 
@@ -49,6 +51,7 @@ public abstract class CommandSupport implements Serializable {
         setLogger(parent.getLogger());
         setShellFacade(parent.getShellFacade());
         setCurrentDir(parent.getCurrentDir());
+        setFileReadFacade(parent.getFileReadFacade());
     }
 
 
@@ -278,6 +281,10 @@ public abstract class CommandSupport implements Serializable {
         this.currentDir = currentDir;
     }
 
+    public void setCurrentPath(String path) {
+        setCurrentDir(new File(path));
+    }
+
     public Logger getLogger() {
         if (logger == null) {
             logger = Logger.getInstance();
@@ -317,10 +324,33 @@ public abstract class CommandSupport implements Serializable {
         this.shellFacade = shellFacade;
     }
 
+    public FileReadFacade getFileReadFacade() {
+        return fileReadFacade;
+    }
+
+    public void setFileReadFacade(FileReadFacade fileReadFacade) {
+        this.fileReadFacade = fileReadFacade;
+    }
+
     // Implementation methods
     //-------------------------------------------------------------------------
-    protected String readFile(String name) throws IOException {
-        return IOHelpers.readFully(createFile(name));
+    @NonCPS
+    protected String readFile(String path) throws IOException {
+        FileReadFacade fileReadFacade = getFileReadFacade();
+        if (fileReadFacade != null) {
+            System.out.println("========= CommandSupport.readFile " + path);
+            String result = null;
+            try {
+                result = fileReadFacade.apply(path);
+            } catch (Exception e) {
+                error("Could not invoke FileReadFacade on " + path + " due to " + e, e);
+                return null;
+            }
+            System.out.println("========= CommandSupport.readFile " + path + " results: " + result);
+            return result;
+        } else {
+            return IOHelpers.readFully(createFile(path));
+        }
     }
 
     protected File createFile(String name) {

@@ -36,14 +36,27 @@ public class MavenFlowDSL extends PipelineDSLGlobal {
                     "new org.jenkinsci.plugins.fabric8.Fabric8Commands",
                     "new org.jenkinsci.plugins.fabric8.Utils",
 
-                    "method org.jenkinsci.plugins.fabric8.steps.MavenFlow perform org.jenkinsci.plugins.fabric8.Utils",
-                    "staticMethod org.jenkinsci.plugins.fabric8.steps.MavenFlow perform org.jenkinsci.plugins.fabric8.Utils",
+                    // arguments
+                    "new org.jenkinsci.plugins.fabric8.steps.MavenFlow$Arguments",
+                    "method org.jenkinsci.plugins.fabric8.steps.MavenFlow$Arguments setPauseOnFailure boolean",
+                    "method org.jenkinsci.plugins.fabric8.steps.MavenFlow$Arguments setPauseOnSuccess boolean",
+                    "method org.jenkinsci.plugins.fabric8.steps.MavenFlow$Arguments setCdOrganisation java.lang.String",
+                    "method org.jenkinsci.plugins.fabric8.steps.MavenFlow$Arguments setCdBranches java.util.List",
+                    "method org.jenkinsci.plugins.fabric8.steps.MavenFlow$Arguments *",
+
+
+                    "staticMethod org.jenkinsci.plugins.fabric8.steps.MavenFlow perform org.jenkinsci.plugins.fabric8.Utils java.util.Map",
 
                     // for exposing sh()
                     "method groovy.lang.GroovyObject invokeMethod java.lang.String java.lang.Object",
 
+                    // for println
+                    "staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods println java.lang.Object java.lang.Object",
+                    
                     "method org.jenkinsci.plugins.fabric8.CommandSupport updateEnvironment java.lang.Object",
                     "method org.jenkinsci.plugins.fabric8.CommandSupport setEnv java.util.Map",
+                    "method org.jenkinsci.plugins.fabric8.CommandSupport setCurrentPath java.lang.String",
+                    "method org.jenkinsci.plugins.fabric8.CommandSupport setFileReadFacade org.jenkinsci.plugins.fabric8.FileReadFacade",
                     "method org.jenkinsci.plugins.fabric8.CommandSupport setShellFacade org.jenkinsci.plugins.fabric8.ShellFacade",
                     "method org.jenkinsci.plugins.fabric8.CommandSupport updateSh java.lang.Object",
                     "method org.jenkinsci.plugins.fabric8.CommandSupport *",
