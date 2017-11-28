@@ -203,9 +203,15 @@ Boolean cdPipeline(MavenFlow.Arguments arguments) {
     throw new FailedBuildException("No gitCloneUrl configured for this pipeline!");
   }
   GitRepositoryInfo repositoryInfo = GitHelper.parseGitRepositoryInfo(gitCloneUrl);
-  sh("git remote set-url " + gitCloneUrl);
-
+  String remoteGitCloneUrl = remoteGitCloneUrl(repositoryInfo)
+  if (remoteGitCloneUrl != null) {
+    container("clients") {
+      println "setting remote URL to ${remoteGitCloneUrl}"
+      sh("git remote set-url origin " + remoteGitCloneUrl);
+    }
+  }
   println "TODO CD Pipeline"
+
 /*
   StageProject.Arguments stageProjectArguments = arguments.createStageProjectArguments(getLogger(), repositoryInfo);
   StagedProjectInfo stagedProject = new StageProject(this).apply(stageProjectArguments);
@@ -213,6 +219,13 @@ Boolean cdPipeline(MavenFlow.Arguments arguments) {
   ReleaseProject.Arguments releaseProjectArguments = arguments.createReleaseProjectArguments(getLogger(), stagedProject);
   return new ReleaseProject(this).apply(releaseProjectArguments);
 */
+}
+
+String remoteGitCloneUrl(GitRepositoryInfo info) {
+  if (info.getHost().equals("github.com")) {
+    return "git@github.com:${info.getOrganisation()}/${info.getName()}.git"
+  }
+  return null
 }
 
 String doFindGitCloneURL() {
