@@ -1,12 +1,12 @@
 /**
  * Copyright (C) Original Authors 2017
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,6 +23,7 @@ import org.jenkinsci.plugins.fabric8.Fabric8Commands;
 import org.jenkinsci.plugins.fabric8.Utils;
 import org.jenkinsci.plugins.fabric8.helpers.BooleanHelpers;
 
+import java.io.Serializable;
 import java.util.LinkedHashMap;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
@@ -78,7 +79,9 @@ public class BayesianScanner extends CommandSupport implements Function<Bayesian
         return null;
     }
 
-    public static class Arguments {
+    public static class Arguments implements Serializable {
+        private static final long serialVersionUID = 1L;
+
         @Argument
         private String serviceName = "bayesian-link";
         @Argument

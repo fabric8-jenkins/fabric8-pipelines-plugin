@@ -38,14 +38,14 @@ public class MavenFlowDSL extends PipelineDSLGlobal {
 
                     // arguments
                     "new org.jenkinsci.plugins.fabric8.steps.MavenFlow$Arguments",
+                    "method org.jenkinsci.plugins.fabric8.steps.MavenFlow$Arguments setGitCloneUrl java.lang.String",
                     "method org.jenkinsci.plugins.fabric8.steps.MavenFlow$Arguments setPauseOnFailure boolean",
                     "method org.jenkinsci.plugins.fabric8.steps.MavenFlow$Arguments setPauseOnSuccess boolean",
                     "method org.jenkinsci.plugins.fabric8.steps.MavenFlow$Arguments setCdOrganisation java.lang.String",
                     "method org.jenkinsci.plugins.fabric8.steps.MavenFlow$Arguments setCdBranches java.util.List",
                     "method org.jenkinsci.plugins.fabric8.steps.MavenFlow$Arguments *",
 
-
-                    "staticMethod org.jenkinsci.plugins.fabric8.steps.MavenFlow perform org.jenkinsci.plugins.fabric8.Utils java.util.Map",
+                    "staticMethod org.jenkinsci.plugins.fabric8.steps.MavenFlow$Arguments newInstance java.util.Map",
 
                     // for exposing sh()
                     "method groovy.lang.GroovyObject invokeMethod java.lang.String java.lang.Object",
@@ -62,6 +62,21 @@ public class MavenFlowDSL extends PipelineDSLGlobal {
                     "method org.jenkinsci.plugins.fabric8.CommandSupport *",
                     "method org.jenkinsci.plugins.fabric8.Utils setBranch java.lang.String",
                     "method org.jenkinsci.plugins.fabric8.Utils *",
+
+                    // finding git url
+                    "new java.io.File java.lang.String",
+                    "new java.io.File java.io.File java.lang.String",
+                    "method java.io.File getAbsolutePath",
+
+                    "staticMethod org.jenkinsci.plugins.fabric8.helpers.GitHelper extractGitUrl java.lang.String",
+                    "staticMethod org.jenkinsci.plugins.fabric8.helpers.GitHelper parseGitRepositoryInfo java.lang.String",
+                    "method org.jenkinsci.plugins.fabric8.helpers.GitRepositoryInfo *",
+                    "method org.jenkinsci.plugins.fabric8.helpers.GitRepositoryInfo * *",
+
+                    // string utils
+                    "staticMethod io.fabric8.utils.Strings isNotBlank java.lang.String",
+                    "staticMethod io.fabric8.utils.Strings isNullOrBlank java.lang.String",
+                    "staticMethod io.fabric8.utils.Strings notEmpty java.lang.String",
 
                     "method java.util.Map$Entry getKey",
                     "method java.util.Map$Entry getValue"
