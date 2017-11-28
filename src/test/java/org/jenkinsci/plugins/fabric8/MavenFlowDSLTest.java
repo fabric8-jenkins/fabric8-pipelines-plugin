@@ -65,14 +65,23 @@ public class MavenFlowDSLTest {
     }
 
     @Test
-    public void cloneSampleRepo() throws Exception {
+    public void sampleRepoCIBuild() throws Exception {
+        assertBuildSuccess("scripted");
+    }
+
+    @Test
+    public void sampleRepoCDBuild() throws Exception {
+        assertBuildSuccess("scripted-cd");
+    }
+
+    public void assertBuildSuccess(String branchName) throws Exception {
         story.addStep(new Statement() {
             @Override
             public void evaluate() throws Throwable {
                 WorkflowJob p = story.j.jenkins.createProject(WorkflowJob.class, "p");
 
                 GitStep gitStep = new GitStep("https://github.com/jstrachan/test-maven-flow-project.git");
-                gitStep.setBranch("scripted");
+                gitStep.setBranch(branchName);
                 p.setDefinition(new CpsScmFlowDefinition(gitStep.createSCM(), "Jenkinsfile"));
                 WorkflowRun b = p.scheduleBuild2(0).waitForStart();
                 story.j.assertLogContains("Finished: SUCCESS",

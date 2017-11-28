@@ -6,40 +6,15 @@ import org.jenkinsci.plugins.fabric8.ShellFacade
 import org.jenkinsci.plugins.fabric8.Utils
 import org.jenkinsci.plugins.fabric8.helpers.GitHelper
 import org.jenkinsci.plugins.fabric8.helpers.GitRepositoryInfo
-import org.jenkinsci.plugins.fabric8.model.StagedProjectInfo
 import org.jenkinsci.plugins.fabric8.steps.MavenFlow
-import org.jenkinsci.plugins.fabric8.steps.ReleaseProject
-import org.jenkinsci.plugins.fabric8.steps.StageProject
 
-def utils
-
-// The call(body) method in any file in workflowLibs.git/vars is exposed as a
-// method with the same name as the file.
 def call(Map config = [:]) {
-/*
-def call(Map config = [:], body) {
-*/
-/*
-  def config = [:]
-  body.resolveStrategy = Closure.DELEGATE_FIRST
-  body.delegate = config
-*/
-/*
-  body()
-*/
-
   echo "mavenFlow ${config}"
 
 
   def pauseOnFailure = config.get('pauseOnFailure', false)
   def pauseOnSuccess = config.get('pauseOnSuccess', false)
 
-/*
-  def arguments = new MavenFlow.Arguments(config)
-  def pauseOnFailure = arguments.isPauseOnFailure()
-  def pauseOnSuccess = arguments.isPauseOnSuccess()
-*/
-/*
 /*
   def organisationName = "fabric8io"
   def repoName = '${organisationName}/fabric8-platform'
@@ -82,7 +57,7 @@ def call(Map config = [:], body) {
 
   } catch (err) {
     //hubot room: 'release', message: "${env.JOB_NAME} failed: ${err}"
-    error "${err}"
+    logError(err)
 
     if (pauseOnFailure) {
       input message: 'The build pod has been paused'
@@ -120,7 +95,7 @@ boolean isCD(MavenFlow.Arguments arguments) {
   try {
     flag = utils.isCD();
   } catch (e) {
-    error(e)
+    logError(e)
   }
   if (flag && flag.booleanValue()) {
     return true;
@@ -153,16 +128,13 @@ boolean isCD(MavenFlow.Arguments arguments) {
   return false;
 }
 
-def warning(String message) {
-  println "WARNING: ${message}"
-}
 
 boolean isCi(MavenFlow.Arguments arguments) {
   boolean value = false
   try {
     value = utils.isCI();
   } catch (e) {
-    error(e)
+    logError(e)
   }
   if (value) {
     return true;
@@ -170,16 +142,6 @@ boolean isCi(MavenFlow.Arguments arguments) {
 
   // TODO for now should we return true if CD is false?
   return !isCD(arguments);
-}
-
-def error(Throwable t) {
-  println "ERROR: " + t.getMessage()
-  t.printStackTrace()
-}
-
-def error(String message, Throwable t) {
-  println "ERROR: " + message + " " + t.getMessage()
-  t.printStackTrace()
 }
 
 /**
@@ -199,7 +161,7 @@ Boolean cdPipeline(MavenFlow.Arguments arguments) {
   println("Performing CD pipeline");
   String gitCloneUrl = arguments.getGitCloneUrl();
   if (Strings.isNullOrBlank(gitCloneUrl)) {
-    error("No gitCloneUrl configured for this pipeline!");
+    logError("No gitCloneUrl configured for this pipeline!");
     throw new FailedBuildException("No gitCloneUrl configured for this pipeline!");
   }
   GitRepositoryInfo repositoryInfo = GitHelper.parseGitRepositoryInfo(gitCloneUrl);
@@ -210,7 +172,11 @@ Boolean cdPipeline(MavenFlow.Arguments arguments) {
       sh("git remote set-url origin " + remoteGitCloneUrl);
     }
   }
-  println "TODO CD Pipeline"
+  println "Staging project"
+
+  def result = stageProject()
+
+  println "Staging result = ${result}"
 
 /*
   StageProject.Arguments stageProjectArguments = arguments.createStageProjectArguments(getLogger(), repositoryInfo);
@@ -219,6 +185,7 @@ Boolean cdPipeline(MavenFlow.Arguments arguments) {
   ReleaseProject.Arguments releaseProjectArguments = arguments.createReleaseProjectArguments(getLogger(), stagedProject);
   return new ReleaseProject(this).apply(releaseProjectArguments);
 */
+  return false
 }
 
 String remoteGitCloneUrl(GitRepositoryInfo info) {
@@ -265,14 +232,14 @@ String findBranch() {
         echo("output of git --version: " + sh(script: "git --version", returnStdout: true));
         echo("pwd: " + sh(script: "pwd", returnStdout: true));
       } catch (e) {
-        error("Failed to invoke git --version: " + e, e);
+        logError("Failed to invoke git --version: " + e, e);
       }
       if (!branch) {
         def head = null
         try {
           head = sh(script: "git rev-parse HEAD", returnStdout: true)
         } catch (e) {
-          error("Failed to load: git rev-parse HEAD: " + e, e)
+          logError("Failed to load: git rev-parse HEAD: " + e, e)
         }
         if (head) {
           head = head.trim()
@@ -282,7 +249,7 @@ String findBranch() {
               branch = text.trim();
             }
           } catch (e) {
-            error("\nUnable to get git branch: " + e, e);
+            logError("\nUnable to get git branch: " + e, e);
           }
         }
       }
@@ -293,11 +260,31 @@ String findBranch() {
             branch = text.trim();
           }
         } catch (e) {
-          error("\nUnable to get git branch and in a detached HEAD. You may need to select Pipeline additional behaviour and \'Check out to specific local branch\': " + e, e);
+          logError("\nUnable to get git branch and in a detached HEAD. You may need to select Pipeline additional behaviour and \'Check out to specific local branch\': " + e, e);
         }
       }
     }
     echo "Found branch ${branch}"
-    return branch;
   }
+  return branch;
+}
+
+
+// TODO common stuff
+def logError(Throwable t) {
+  println "ERROR: " + t.getMessage()
+  t.printStackTrace()
+}
+
+def logError(String message) {
+  println "ERROR: " + message
+}
+
+def logError(String message, Throwable t) {
+  println "ERROR: " + message + " " + t.getMessage()
+  t.printStackTrace()
+}
+
+def warning(String message) {
+  println "WARNING: ${message}"
 }
