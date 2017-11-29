@@ -1,12 +1,12 @@
 /**
  * Copyright (C) Original Authors 2017
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,7 +17,6 @@ package org.jenkinsci.plugins.fabric8.dsl;
 
 import hudson.Extension;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.ProxyWhitelist;
-import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.StaticWhitelist;
 
 import java.io.IOException;
 
@@ -32,7 +31,9 @@ public class MavenFlowDSL extends PipelineDSLGlobal {
     @Extension
     public static class MiscWhitelist extends ProxyWhitelist {
         public MiscWhitelist() throws IOException {
-            super(new StaticWhitelist(
+            super(createStaticWhitelist(), new Fabric8PipelinesWhitelist());
+
+/*            super(new StaticWhitelist(
                     "new org.jenkinsci.plugins.fabric8.Fabric8Commands",
                     "new org.jenkinsci.plugins.fabric8.Utils",
 
@@ -80,7 +81,7 @@ public class MavenFlowDSL extends PipelineDSLGlobal {
 
                     "method java.util.Map$Entry getKey",
                     "method java.util.Map$Entry getValue"
-            ));
+            ));*/
         }
     }
 

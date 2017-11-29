@@ -1,12 +1,12 @@
 /**
  * Copyright (C) Original Authors 2017
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,6 +17,8 @@ package org.jenkinsci.plugins.fabric8.dsl;
 
 import groovy.lang.Binding;
 import groovy.lang.GroovyCodeSource;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.StaticWhitelist;
 import org.jenkinsci.plugins.workflow.cps.CpsScript;
 import org.jenkinsci.plugins.workflow.cps.CpsThread;
 import org.jenkinsci.plugins.workflow.cps.GlobalVariable;
@@ -24,8 +26,48 @@ import org.jenkinsci.plugins.workflow.cps.GlobalVariable;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public abstract class PipelineDSLGlobal extends GlobalVariable {
+
+    protected static Whitelist createStaticWhitelist(String... lines) throws IOException {
+        List<String> list = new ArrayList<>();
+        list.addAll(Arrays.asList(
+                // for exposing sh()
+                "method groovy.lang.GroovyObject invokeMethod java.lang.String java.lang.Object",
+
+                // for println
+                "staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods println java.lang.Object java.lang.Object",
+
+                "method java.lang.Exception printStackTrace",
+                "method java.lang.Throwable printStackTrace",
+
+                // finding git url
+                "new java.io.File java.lang.String",
+                "new java.io.File java.io.File java.lang.String",
+                "method java.io.File getAbsolutePath",
+
+                "staticMethod org.jenkinsci.plugins.fabric8.helpers.GitHelper extractGitUrl java.lang.String",
+                "staticMethod org.jenkinsci.plugins.fabric8.helpers.GitHelper parseGitRepositoryInfo java.lang.String",
+                "method org.jenkinsci.plugins.fabric8.helpers.GitRepositoryInfo *",
+                "method org.jenkinsci.plugins.fabric8.helpers.GitRepositoryInfo * *",
+
+                // string utils
+                "staticMethod io.fabric8.utils.Strings isNotBlank java.lang.String",
+                "staticMethod io.fabric8.utils.Strings isNullOrBlank java.lang.String",
+                "staticMethod io.fabric8.utils.Strings notEmpty java.lang.String",
+
+                "method java.util.Map$Entry getKey",
+                "method java.util.Map$Entry getValue"
+        ));
+
+        if (lines != null) {
+            list.addAll(Arrays.asList(lines));
+        }
+        return new StaticWhitelist(list);
+    }
 
     public abstract String getFunctionName();
 
@@ -33,7 +75,6 @@ public abstract class PipelineDSLGlobal extends GlobalVariable {
     public String getName() {
         return getFunctionName();
     }
-
 
     @Override
     public Object getValue(CpsScript script) throws Exception {
@@ -65,5 +106,4 @@ public abstract class PipelineDSLGlobal extends GlobalVariable {
             return pipelineDSL;
         }
     }
-
 }

@@ -117,7 +117,7 @@ public class AbstractKubernetesPipelineTest {
         mavenTemplate.setTtyEnabled(true);
         podTemplate.getContainers().add(mavenTemplate);
 
-        ContainerTemplate clientsTemplate = new ContainerTemplate("clients", "fabric8/builder-clients:latest", "cat", "");
+        ContainerTemplate clientsTemplate = new ContainerTemplate("clients", "fabric8/builder-clients:v9c7b90f", "cat", "");
         clientsTemplate.setTtyEnabled(true);
         podTemplate.getContainers().add(clientsTemplate);
 

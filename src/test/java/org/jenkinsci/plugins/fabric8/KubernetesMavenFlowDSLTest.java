@@ -16,6 +16,7 @@
 package org.jenkinsci.plugins.fabric8;
 
 import jenkins.plugins.git.GitStep;
+import org.jenkinsci.plugins.fabric8.helpers.BooleanHelpers;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.cps.CpsScmFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
@@ -45,13 +46,20 @@ public class KubernetesMavenFlowDSLTest extends AbstractKubernetesPipelineTest {
 
     @Test
     public void sampleRepoCDBuild() throws Exception {
-        assertBuildSuccess("pod-template-by-name");
+        String branchName = "pod-template-by-name";
+        if (BooleanHelpers.asBoolean(System.getProperty("pausePipeline"))) {
+            branchName += "-pause";
+        }
+        assertBuildSuccess(branchName);
     }
 
     public void assertBuildSuccess(String branchName) throws Exception {
+        String gitUrl = "https://github.com/jstrachan/test-maven-flow-project.git";
+        System.out.println("Testing repo " + gitUrl + " branch " + branchName);
+        
         WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "test-" + branchName);
 
-        GitStep gitStep = new GitStep("https://github.com/jstrachan/test-maven-flow-project.git");
+        GitStep gitStep = new GitStep(gitUrl);
         gitStep.setBranch(branchName);
         p.setDefinition(new CpsScmFlowDefinition(gitStep.createSCM(), "Jenkinsfile"));
 
