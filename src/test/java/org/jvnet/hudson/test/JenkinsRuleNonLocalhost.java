@@ -99,7 +99,7 @@ public class JenkinsRuleNonLocalhost extends JenkinsRule {
         server.start();
 
         localPort = connector.getLocalPort();
-        LOGGER.log(Level.INFO, "Running on {0}", getURL());
+        LOGGER.log(Level.INFO, "Running on {0}", "http://" + connector.getHost() + ":" + connector.getLocalPort() + contextPath);
 
         return context.getServletContext();
     }

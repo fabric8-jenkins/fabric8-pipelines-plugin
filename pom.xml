@@ -56,6 +56,12 @@
 
   <properties>
     <!--
+      see: https://github.com/jenkinsci/kubernetes-plugin#integration-tests-with-minikube
+    -->
+    <connectorHost>192.168.64.1</connectorHost>
+
+
+    <!--
         <jenkins.version>2.60.1</jenkins.version>
     -->
     <jenkins.version>2.60.3</jenkins.version>
@@ -360,7 +366,33 @@
 
   </dependencies>
 
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <systemPropertyVariables>
+            <hudson.slaves.NodeProvisioner.initialDelay>0</hudson.slaves.NodeProvisioner.initialDelay>
+            <!-- listen in this interface for connections from kubernetes pods -->
+            <connectorHost>${connectorHost}</connectorHost>
+          </systemPropertyVariables>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
   <profiles>
+    <profile>
+      <id>listen-all-ips</id>
+      <properties>
+        <!--
+          this is insecure but nice and easy ;)
+          see: https://github.com/jenkinsci/kubernetes-plugin#integration-tests-with-minikube
+        -->
+        <connectorHost>0.0.0.0</connectorHost>
+      </properties>
+    </profile>
     <profile>
       <id>license</id>
       <build>

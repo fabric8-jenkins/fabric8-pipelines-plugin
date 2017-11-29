@@ -92,7 +92,8 @@ public class AbstractKubernetesPipelineTest {
         }
         URL nonLocalhostUrl = new URL(url.getProtocol(), hostAddress, url.getPort(),
                 url.getFile());
-        JenkinsLocationConfiguration.get().setUrl(nonLocalhostUrl.toString());
+        String jenkinsUrl = nonLocalhostUrl.toString();
+        JenkinsLocationConfiguration.get().setUrl(jenkinsUrl);
 
         r.jenkins.clouds.add(cloud);
     }
@@ -101,6 +102,7 @@ public class AbstractKubernetesPipelineTest {
         // Create a busybox template
         PodTemplate podTemplate = new PodTemplate();
         podTemplate.setLabel(label);
+        podTemplate.setName(label);
 
         ContainerTemplate mavenTemplate = new ContainerTemplate("maven", "maven:3.3.9-jdk-8-alpine", "cat", "");
         mavenTemplate.setTtyEnabled(true);
