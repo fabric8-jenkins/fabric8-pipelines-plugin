@@ -59,6 +59,8 @@
       see: https://github.com/jenkinsci/kubernetes-plugin#integration-tests-with-minikube
     -->
     <connectorHost>192.168.64.1</connectorHost>
+    <nodeProvisionMargin>50</nodeProvisionMargin>
+    <nodeProvisionMargin0>0.85</nodeProvisionMargin0>
 
 
     <!--
@@ -374,8 +376,11 @@
         <configuration>
           <systemPropertyVariables>
             <hudson.slaves.NodeProvisioner.initialDelay>0</hudson.slaves.NodeProvisioner.initialDelay>
+            <hudson.slaves.NodeProvisioner.MARGIN>${nodeProvisionMargin}</hudson.slaves.NodeProvisioner.MARGIN>
+            <hudson.slaves.NodeProvisioner.MARGIN0>${nodeProvisionMargin0}</hudson.slaves.NodeProvisioner.MARGIN0>
             <!-- listen in this interface for connections from kubernetes pods -->
             <connectorHost>${connectorHost}</connectorHost>
+            
           </systemPropertyVariables>
         </configuration>
       </plugin>

@@ -74,6 +74,15 @@ public class AbstractKubernetesPipelineTest {
     @BeforeClass
     public static void isKubernetesConfigured() throws Exception {
         assumeKubernetes();
+
+        printSystemProperties("hudson.slaves.NodeProvisioner.initialDelay", "hudson.slaves.NodeProvisioner.MARGIN", "hudson.slaves.NodeProvisioner.MARGIN0");
+    }
+
+    private static void printSystemProperties(String... names) {
+        for (String name : names) {
+            String value = System.getProperty(name);
+            System.out.println("  system property: " + name + " = " + value);
+        }
     }
 
     @Before
