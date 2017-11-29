@@ -64,12 +64,12 @@ public class MavenFlowDSLTest {
         });
     }
 
-    @Test
+    @Ignore
     public void sampleRepoCIBuild() throws Exception {
         assertBuildSuccess("scripted");
     }
 
-    @Test
+    @Ignore
     public void sampleRepoCDBuild() throws Exception {
         assertBuildSuccess("scripted-cd");
     }
