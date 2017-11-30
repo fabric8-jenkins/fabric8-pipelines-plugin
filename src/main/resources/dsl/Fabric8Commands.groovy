@@ -275,23 +275,6 @@ def getNewVersionFromTag(pomVersion = null) {
     }
 }
 
-def stageSonartypeRepo() {
-    try {
-        sh "mvn clean -B"
-        sh "mvn -V -B -e -U install org.sonatype.plugins:nexus-staging-maven-plugin:1.6.7:deploy -P release -P openshift -DnexusUrl=https://oss.sonatype.org -DserverId=oss-sonatype-staging -Ddocker.push.registry=${env.FABRIC8_DOCKER_REGISTRY_SERVICE_HOST}:${env.FABRIC8_DOCKER_REGISTRY_SERVICE_PORT}"
-
-        // lets not archive artifacts until we if we just use nexus or a content repo
-        //step([$class: 'ArtifactArchiver', artifacts: '**/target/*.jar', fingerprint: true])
-
-    } catch (err) {
-        hubotSend room: 'release', message: "Release failed when building and deploying to Nexus ${err}", failOnError: false
-        currentBuild.result = 'FAILURE'
-        error "ERROR Release failed when building and deploying to Nexus ${err}"
-    }
-    // the sonartype staging repo id gets written to a file in the workspace
-    return getRepoIds()
-}
-
 def releaseSonartypeRepo(String repoId) {
     try {
         // release the sonartype staging repo

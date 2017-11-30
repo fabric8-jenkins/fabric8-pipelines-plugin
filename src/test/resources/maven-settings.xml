@@ -1,23 +1,22 @@
 <settings>
-  <localRepository>/home/jenkins/.mvnrepository</localRepository>
+  <localRepository>/root/.mvnrepository</localRepository>
   <!--This sends everything else to /public -->
+<!--
   <mirrors>
     <mirror>
       <id>nexus</id>
       <mirrorOf>external:*</mirrorOf>
-<!--
-      <url>http://nexus/content/groups/public</url>
--->
-      <url>https://nexus.cd.test.fabric8.io/content/groups/public</url>
+      <url>http://artifact-repository/content/groups/public</url>
     </mirror>
   </mirrors>
+-->
 
   <!-- lets disable the download progress indicator that fills up logs -->
   <interactiveMode>false</interactiveMode>
 
   <servers>
     <server>
-      <id>local-nexus</id>
+      <id>local-repo</id>
       <username>admin</username>
       <password>admin123</password>
     </server>
@@ -43,11 +42,12 @@
 
   <profiles>
     <profile>
-      <id>nexus</id>
+      <id>artifact-repository</id>
+
       <properties>
-        <altDeploymentRepository>local-nexus::default::http://nexus/content/repositories/staging/</altDeploymentRepository>
-        <altReleaseDeploymentRepository>local-nexus::default::http://nexus/content/repositories/staging/</altReleaseDeploymentRepository>
-        <altSnapshotDeploymentRepository>local-nexus::default::http://nexus/content/repositories/staging/</altSnapshotDeploymentRepository>
+        <altDeploymentRepository>local-repo::default::http://artifact-repository/content/repositories/staging/</altDeploymentRepository>
+        <altReleaseDeploymentRepository>local-repo::default::http://artifact-repository/content/repositories/staging/</altReleaseDeploymentRepository>
+        <altSnapshotDeploymentRepository>local-repo::default::http://artifact-repository/content/repositories/staging/</altSnapshotDeploymentRepository>
       </properties>
 
       <repositories>
@@ -74,12 +74,8 @@
         <altReleaseDeploymentRepository>repo.jenkins-ci.org::default::https://repo.jenkins-ci.org/releases/</altReleaseDeploymentRepository>
         <altSnapshotDeploymentRepository>repo.jenkins-ci.org::default::https://repo.jenkins-ci.org/snapshots/</altSnapshotDeploymentRepository>
       </properties>
-      <!-- <properties>
-        <altDeploymentRepository>repo.jenkins-ci.org::default::https://repo.jenkins-ci.org/content/repositories/releases/</altDeploymentRepository>
-        <altReleaseDeploymentRepository>repo.jenkins-ci.org::default::https://repo.jenkins-ci.org/content/repositories/releases/</altReleaseDeploymentRepository>
-        <altSnapshotDeploymentRepository>repo.jenkins-ci.org::default::https://repo.jenkins-ci.org/content/repositories/snapshots/</altSnapshotDeploymentRepository>
-      </properties> -->
     </profile>
+
     <profile>
       <id>release</id>
       <properties>
@@ -88,8 +84,4 @@
       </properties>
     </profile>
   </profiles>
-
-  <activeProfiles>
-    <activeProfile>nexus</activeProfile>
-  </activeProfiles>
 </settings>

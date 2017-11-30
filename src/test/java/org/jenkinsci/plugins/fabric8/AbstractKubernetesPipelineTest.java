@@ -31,8 +31,10 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.QuantityBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.utils.IOHelpers;
+import io.fabric8.utils.Strings;
 import jenkins.model.JenkinsLocationConfiguration;
 import org.apache.commons.compress.utils.IOUtils;
 import org.csanchez.jenkins.plugins.kubernetes.ContainerTemplate;
@@ -64,7 +66,6 @@ import static org.jenkinsci.plugins.fabric8.KubernetesTestUtil.assumeKubernetes;
 import static org.jenkinsci.plugins.fabric8.KubernetesTestUtil.setupCloud;
 import static org.jenkinsci.plugins.fabric8.support.KubeHelpers.setEnvVar;
 import static org.jenkinsci.plugins.fabric8.support.TestHelpers.getBasedir;
-import static org.jenkinsci.remoting.engine.JnlpConnectionState.SECRET_KEY;
 
 public class AbstractKubernetesPipelineTest {
     public static final String JENKINS_MVN_LOCAL_REPO = "jenkins-mvn-local-repo";
@@ -74,6 +75,7 @@ public class AbstractKubernetesPipelineTest {
     public static final String JENKINS_HUB_API_TOKEN = "jenkins-hub-api-token";
     public static final String JENKINS_SSH_CONFIG = "jenkins-ssh-config";
     public static final String JENKINS_GIT_SSH = "jenkins-git-ssh";
+    public static final String FABRIC8_DOCKER_REGISTRY = "fabric8-docker-registry";
 
     @ClassRule
     public static BuildWatcher buildWatcher = new BuildWatcher();
@@ -128,7 +130,7 @@ public class AbstractKubernetesPipelineTest {
         podTemplate.setLabel(label);
         podTemplate.setName(label);
 
-        List<PodVolume> volumes  = new ArrayList<>();
+        List<PodVolume> volumes = new ArrayList<>();
 
         KubeHelpers.secretVolume(volumes, JENKINS_MAVEN_SETTINGS, "/root/.m2");
         KubeHelpers.secretVolume(volumes, JENKINS_DOCKER_CFG, "/home/jenkins/.docker");
@@ -143,7 +145,7 @@ public class AbstractKubernetesPipelineTest {
         List<ContainerTemplate> containers = new ArrayList<>();
 
         podTemplate.setContainers(containers);
-        ContainerTemplate mavenTemplate = new ContainerTemplate("maven", "maven:3.3.9-jdk-8-alpine", "cat", "");
+        ContainerTemplate mavenTemplate = new ContainerTemplate("maven", "fabric8/maven-builder:vd81dedb", "cat", "");
         configureContainer(mavenTemplate);
         setEnvVar(mavenTemplate, "MAVEN_OPTS", "-Duser.home=/root/ -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn");
         containers.add(mavenTemplate);
@@ -165,7 +167,15 @@ public class AbstractKubernetesPipelineTest {
         setEnvVar(container, "DOCKER_API_VERSION", "1.23");
     }
 
-    private void createSecretsAndPVCs(KubernetesClient client) throws IOException {
+    private void createSecretsAndPVCs(KubernetesClient client) throws IOException, InterruptedException {
+        Service registryService = client.services().withName(FABRIC8_DOCKER_REGISTRY).get();
+        if (registryService == null) {
+            runCommands("kubectl", "apply", "-f", "http://central.maven.org/maven2/io/fabric8/apps/docker-registry/1.0.1/docker-registry-1.0.1-kubernetes.yml");
+        }
+        Service repositoryService = client.services().withName("artifact-repository").get();
+        if (repositoryService == null) {
+            runCommands("kubectl", "apply", "-f", "http://central.maven.org/maven2/io/fabric8/apps/nexus-app/1.0.1/nexus-app-1.0.1-kubernetes.yml");
+        }
         PersistentVolumeClaim pvc = client.persistentVolumeClaims().withName(JENKINS_MVN_LOCAL_REPO).get();
         if (pvc == null) {
             Map<String, Quantity> requestMap = new HashMap<>();
@@ -180,7 +190,17 @@ public class AbstractKubernetesPipelineTest {
 
         createOrReplaceSecret(client, JENKINS_MAVEN_SETTINGS, ImmutableMap.of("settings.xml", testClassesFileContent("maven-settings.xml")));
         createOrReplaceSecret(client, JENKINS_DOCKER_CFG, ImmutableMap.of("docker-config.json", testClassesFileContent("docker-config.json")));
-        createOrReplaceSecret(client, JENKINS_RELEASE_GPG, createUserHomeSubDirFiles(".gnupg", "pubring.gpg", "sec-jenkins.gpg", "secring.gpg", "trustdb.gpg"));
+/*
+        File gpgDir;
+        String gpgPath = System.getProperty("gpgDir");
+        if (Strings.notEmpty(gpgPath)) {
+            gpgDir = new File(gpgPath);
+        } else {
+            gpgDir = getHomeSubDir(".gnupg");
+        }
+        createOrReplaceSecret(client, JENKINS_RELEASE_GPG, createFileMap(gpgDir, "pubring.gpg", "sec-jenkins.gpg", "secring.gpg", "trustdb.gpg"));
+*/
+
         createOrReplaceSecret(client, JENKINS_HUB_API_TOKEN, ImmutableMap.of("hub", System.getProperty("hubToken")));
         createOrReplaceSecret(client, JENKINS_SSH_CONFIG, ImmutableMap.of("config", testClassesFileContent("ssh-config.txt")));
 
@@ -189,9 +209,26 @@ public class AbstractKubernetesPipelineTest {
         createOrReplaceSecret(client, JENKINS_GIT_SSH, ImmutableMap.of("ssh-key", sshFileMap.getOrDefault(sshKeyName, ""), "ssh-key.pub", sshFileMap.getOrDefault(sshKeyName + ".pub", "")));
     }
 
+    public int runCommands(String... commands) throws IOException, InterruptedException {
+        ProcessBuilder builder = new ProcessBuilder(commands);
+        builder.inheritIO();
+        Process process = builder.start();
+        int exitCode = process.waitFor();
+        assertThat(exitCode).describedAs("Results of command: " + String.join(" ", commands)).isEqualTo(0);
+        return exitCode;
+    }
+
     private Map<String, String> createUserHomeSubDirFiles(String homeSubDir, String... fileNames) throws IOException {
+        File dir = getHomeSubDir(homeSubDir);
+        return createFileMap(dir, fileNames);
+    }
+
+    protected File getHomeSubDir(String homeSubDir) {
         File homeDir = new File(System.getProperty("user.home", "~"));
-        File dir = new File(homeDir, homeSubDir);
+        return new File(homeDir, homeSubDir);
+    }
+
+    protected Map<String, String> createFileMap(File dir, String... fileNames) throws IOException {
         Map<String, String> answer = new HashMap<>();
         for (String name : fileNames) {
             File file = new File(dir, name);
