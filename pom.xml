@@ -59,9 +59,11 @@
       see: https://github.com/jenkinsci/kubernetes-plugin#integration-tests-with-minikube
     -->
     <connectorHost>192.168.64.1</connectorHost>
+    <port>9090</port>
     <nodeProvisionMargin>50</nodeProvisionMargin>
     <nodeProvisionMargin0>0.85</nodeProvisionMargin0>
     <pausePipeline></pausePipeline>
+    <jenkins.test.timeout>0</jenkins.test.timeout>
 
 
     <!--
@@ -387,9 +389,34 @@
             <hudson.slaves.NodeProvisioner.MARGIN0>${nodeProvisionMargin0}</hudson.slaves.NodeProvisioner.MARGIN0>
             <!-- listen in this interface for connections from kubernetes pods -->
             <connectorHost>${connectorHost}</connectorHost>
+            <port>${port}</port>
             <pausePipeline>${pausePipeline}</pausePipeline>
-            
+            <jenkins.test.timeout>${jenkins.test.timeout}</jenkins.test.timeout>
           </systemPropertyVariables>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.jenkins-ci.tools</groupId>
+        <artifactId>maven-hpi-plugin</artifactId>
+        <configuration>
+          <!-- with the default setting seems that an older version of jackson from core is used
+            java.lang.NoSuchMethodError: com.fasterxml.jackson.core.JsonFactory.requiresPropertyOrdering()Z
+            at com.fasterxml.jackson.databind.ObjectMapper.<init>(ObjectMapper.java:549)
+            at com.fasterxml.jackson.databind.ObjectMapper.<init>(ObjectMapper.java:460)
+            at io.fabric8.kubernetes.client.utils.Serialization.<clinit>(Serialization.java:37)
+          -->
+          <pluginFirstClassLoader>true</pluginFirstClassLoader>
+          <systemProperties>
+            <hudson.slaves.NodeProvisioner.initialDelay>0</hudson.slaves.NodeProvisioner.initialDelay>
+            <hudson.slaves.NodeProvisioner.MARGIN>${nodeProvisionMargin}</hudson.slaves.NodeProvisioner.MARGIN>
+            <hudson.slaves.NodeProvisioner.MARGIN0>${nodeProvisionMargin0}</hudson.slaves.NodeProvisioner.MARGIN0>
+            <!-- listen in this interface for connections from kubernetes pods -->
+            <connectorHost>${connectorHost}</connectorHost>
+            <port>${port}</port>
+            <pausePipeline>${pausePipeline}</pausePipeline>
+            <jenkins.test.timeout>${jenkins.test.timeout}</jenkins.test.timeout>
+          </systemProperties>
         </configuration>
       </plugin>
     </plugins>

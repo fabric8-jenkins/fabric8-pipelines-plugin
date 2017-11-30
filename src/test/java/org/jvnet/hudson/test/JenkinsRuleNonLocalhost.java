@@ -24,6 +24,7 @@
 
 package org.jvnet.hudson.test;
 
+import io.fabric8.utils.Strings;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
@@ -86,12 +87,13 @@ public class JenkinsRuleNonLocalhost extends JenkinsRule {
         config.setRequestHeaderSize(12 * 1024);
         connector.setHost(HOST);
 
-        if (System.getProperty("port")!=null) {
-            LOGGER.info("Overriding port using system property: " + System.getProperty("port"));
-            connector.setPort(Integer.parseInt(System.getProperty("port")));
+        String portProperty = System.getProperty("port");
+        if (Strings.notEmpty(portProperty)) {
+            LOGGER.info("Overriding port using system property: " + portProperty);
+            connector.setPort(Integer.parseInt(portProperty));
         } else {
-            if (port != null) {
-                connector.setPort(port);
+            if (this.port != null) {
+                connector.setPort(this.port);
             }
         }
 
