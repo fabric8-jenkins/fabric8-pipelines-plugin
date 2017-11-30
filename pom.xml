@@ -65,6 +65,16 @@
     <pausePipeline></pausePipeline>
     <jenkins.test.timeout>0</jenkins.test.timeout>
 
+    <!-- security settings for using -->
+    <sonatypeUser></sonatypeUser>
+    <sonatypePassword></sonatypePassword>
+    <jenkinsCIUser></jenkinsCIUser>
+    <jenkinsCIPassword></jenkinsCIPassword>
+    <dockerHubAuth></dockerHubAuth>
+    <dockerHubEmail></dockerHubEmail>
+    <hubToken></hubToken>
+    <sshKeyName></sshKeyName>
+
 
     <!--
         <jenkins.version>2.60.1</jenkins.version>
@@ -378,6 +388,13 @@
   </dependencies>
 
   <build>
+    <testResources>
+      <testResource>
+        <directory>src/test/resources</directory>
+        <filtering>true</filtering>
+      </testResource>
+    </testResources>
+
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -392,6 +409,17 @@
             <port>${port}</port>
             <pausePipeline>${pausePipeline}</pausePipeline>
             <jenkins.test.timeout>${jenkins.test.timeout}</jenkins.test.timeout>
+
+            <sonatypeUser>${sonatypeUser}</sonatypeUser>
+            <sonatypePassword>${sonatypePassword}</sonatypePassword>
+            <jenkinsCIUser>${jenkinsCIUser}</jenkinsCIUser>
+            <jenkinsCIPassword>${jenkinsCIPassword}</jenkinsCIPassword>
+
+            <dockerHubAuth>${dockerHubAuth}</dockerHubAuth>
+            <dockerHubEmail>${dockerHubEmail}</dockerHubEmail>
+            <hubToken>${hubToken}</hubToken>
+            <sshKeyName>${sshKeyName}</sshKeyName>
+
           </systemPropertyVariables>
         </configuration>
       </plugin>
@@ -416,6 +444,17 @@
             <port>${port}</port>
             <pausePipeline>${pausePipeline}</pausePipeline>
             <jenkins.test.timeout>${jenkins.test.timeout}</jenkins.test.timeout>
+
+            <sonatypeUser>${sonatypeUser}</sonatypeUser>
+            <sonatypePassword>${sonatypePassword}</sonatypePassword>
+            <jenkinsCIUser>${jenkinsCIUser}</jenkinsCIUser>
+            <jenkinsCIPassword>${jenkinsCIPassword}</jenkinsCIPassword>
+
+            <dockerHubAuth>${dockerHubAuth}</dockerHubAuth>
+            <dockerHubEmail>${dockerHubEmail}</dockerHubEmail>
+            <hubToken>${hubToken}</hubToken>
+            <sshKeyName>${sshKeyName}</sshKeyName>
+
           </systemProperties>
         </configuration>
       </plugin>

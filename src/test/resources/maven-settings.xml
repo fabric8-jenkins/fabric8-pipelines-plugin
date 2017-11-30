@@ -1,0 +1,95 @@
+<settings>
+  <localRepository>/home/jenkins/.mvnrepository</localRepository>
+  <!--This sends everything else to /public -->
+  <mirrors>
+    <mirror>
+      <id>nexus</id>
+      <mirrorOf>external:*</mirrorOf>
+<!--
+      <url>http://nexus/content/groups/public</url>
+-->
+      <url>https://nexus.cd.test.fabric8.io/content/groups/public</url>
+    </mirror>
+  </mirrors>
+
+  <!-- lets disable the download progress indicator that fills up logs -->
+  <interactiveMode>false</interactiveMode>
+
+  <servers>
+    <server>
+      <id>local-nexus</id>
+      <username>admin</username>
+      <password>admin123</password>
+    </server>
+    <server>
+      <id>nexus</id>
+      <username>admin</username>
+      <password>admin123</password>
+    </server>
+    <server>
+      <id>docker.io</id>
+    </server>
+    <server>
+      <id>oss-sonatype-staging</id>
+      <username>${sonatypeUser}</username>
+      <password>${sonatypePassword}</password>
+    </server>
+    <server>
+      <id>repo.jenkins-ci.org</id> <!-- For parent 1.397 or newer; before this use id java.net-m2-repository -->
+      <username>${jenkinsCIUser}</username>
+      <password>${jenkinsCIPassword}</password>
+    </server>
+  </servers>
+
+  <profiles>
+    <profile>
+      <id>nexus</id>
+      <properties>
+        <altDeploymentRepository>local-nexus::default::http://nexus/content/repositories/staging/</altDeploymentRepository>
+        <altReleaseDeploymentRepository>local-nexus::default::http://nexus/content/repositories/staging/</altReleaseDeploymentRepository>
+        <altSnapshotDeploymentRepository>local-nexus::default::http://nexus/content/repositories/staging/</altSnapshotDeploymentRepository>
+      </properties>
+
+      <repositories>
+        <repository>
+          <id>central</id>
+          <url>http://central</url>
+          <releases><enabled>true</enabled></releases>
+          <snapshots><enabled>true</enabled></snapshots>
+        </repository>
+      </repositories>
+     <pluginRepositories>
+        <pluginRepository>
+          <id>central</id>
+          <url>http://central</url>
+          <releases><enabled>true</enabled></releases>
+          <snapshots><enabled>true</enabled></snapshots>
+        </pluginRepository>
+      </pluginRepositories>
+    </profile>
+    <profile>
+      <id>repo.jenkins-ci.org</id>
+      <properties>
+        <altDeploymentRepository>repo.jenkins-ci.org::default::https://repo.jenkins-ci.org/releases/</altDeploymentRepository>
+        <altReleaseDeploymentRepository>repo.jenkins-ci.org::default::https://repo.jenkins-ci.org/releases/</altReleaseDeploymentRepository>
+        <altSnapshotDeploymentRepository>repo.jenkins-ci.org::default::https://repo.jenkins-ci.org/snapshots/</altSnapshotDeploymentRepository>
+      </properties>
+      <!-- <properties>
+        <altDeploymentRepository>repo.jenkins-ci.org::default::https://repo.jenkins-ci.org/content/repositories/releases/</altDeploymentRepository>
+        <altReleaseDeploymentRepository>repo.jenkins-ci.org::default::https://repo.jenkins-ci.org/content/repositories/releases/</altReleaseDeploymentRepository>
+        <altSnapshotDeploymentRepository>repo.jenkins-ci.org::default::https://repo.jenkins-ci.org/content/repositories/snapshots/</altSnapshotDeploymentRepository>
+      </properties> -->
+    </profile>
+    <profile>
+      <id>release</id>
+      <properties>
+        <gpg.executable>gpg</gpg.executable>
+        <gpg.passphrase>${gpg.passphrase}</gpg.passphrase>
+      </properties>
+    </profile>
+  </profiles>
+
+  <activeProfiles>
+    <activeProfile>nexus</activeProfile>
+  </activeProfiles>
+</settings>

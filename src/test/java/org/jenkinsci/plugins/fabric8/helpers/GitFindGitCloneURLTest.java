@@ -15,23 +15,18 @@
  */
 package org.jenkinsci.plugins.fabric8.helpers;
 
+import org.jenkinsci.plugins.fabric8.support.TestHelpers;
 import org.junit.Test;
-
-import java.io.File;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  */
 public class GitFindGitCloneURLTest {
-    public static File getBasedir() {
-        String basedirName = System.getProperty("basedir", ".");
-        return new File(basedirName);
-    }
 
     @Test
     public void testGitRepoUrl() throws Exception {
-        String url = GitHelper.extractGitUrl(getBasedir());
+        String url = GitHelper.extractGitUrl(TestHelpers.getBasedir());
         System.out.println("Found git clone URL: " + url);
         assertThat(url).describedAs("extractGitUrl").isNotEmpty();
     }
