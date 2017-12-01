@@ -199,6 +199,9 @@ public class MavenFlow extends CommandSupport implements Function<MavenFlow.Argu
         private boolean useSonatype;
 
         @Argument
+        private boolean updateNextDevelopmentVersion;
+
+        @Argument
         private String dockerOrganisation = "";
         @Argument
         private String promoteToDockerRegistry = "";
@@ -269,6 +272,10 @@ public class MavenFlow extends CommandSupport implements Function<MavenFlow.Argu
             if (Strings.notEmpty(containerName)) {
                 answer.setContainerName(containerName);
             }
+            answer.setReleaseVersion(stagedProject.getReleaseVersion());
+            answer.setProject(stagedProject.getProject());
+            answer.setRepoIds(stagedProject.getRepoIds());
+
             answer.setArtifactExtensionToWaitFor(getArtifactExtensionToWaitFor());
             answer.setArtifactIdToWaitFor(getArtifactIdToWaitFor());
             answer.setDockerOrganisation(getDockerOrganisation());
@@ -277,6 +284,7 @@ public class MavenFlow extends CommandSupport implements Function<MavenFlow.Argu
             answer.setPromoteDockerImages(getPromoteDockerImages());
             answer.setPromoteToDockerRegistry(getPromoteToDockerRegistry());
             answer.setRepositoryToWaitFor(getRepositoryToWaitFor());
+            answer.setUpdateNextDevelopmentVersion(isUpdateNextDevelopmentVersion());
             return answer;
         }
 
@@ -454,6 +462,14 @@ public class MavenFlow extends CommandSupport implements Function<MavenFlow.Argu
 
         public void setUseSonatype(boolean useSonatype) {
             this.useSonatype = useSonatype;
+        }
+
+        public boolean isUpdateNextDevelopmentVersion() {
+            return updateNextDevelopmentVersion;
+        }
+
+        public void setUpdateNextDevelopmentVersion(boolean updateNextDevelopmentVersion) {
+            this.updateNextDevelopmentVersion = updateNextDevelopmentVersion;
         }
     }
 }

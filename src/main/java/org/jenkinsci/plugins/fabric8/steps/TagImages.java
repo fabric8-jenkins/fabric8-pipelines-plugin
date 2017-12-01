@@ -82,6 +82,8 @@ public class TagImages extends CommandSupport implements Function<TagImages.Argu
         private String tag = "";
         @Argument
         private List<String> images = new ArrayList<>();
+        @Argument
+        private String containerName = "clients";
 
         public Arguments() {
         }
@@ -105,6 +107,14 @@ public class TagImages extends CommandSupport implements Function<TagImages.Argu
 
         public void setTag(String tag) {
             this.tag = tag;
+        }
+
+        public String getContainerName() {
+            return containerName;
+        }
+
+        public void setContainerName(String containerName) {
+            this.containerName = containerName;
         }
     }
 }

@@ -1,26 +1,23 @@
 package dsl
 
-def call(body) {
-  // evaluate the body block, and collect configuration into the object
-  def config = [:]
-  body.resolveStrategy = Closure.DELEGATE_FIRST
-  body.delegate = config
-  body()
+import org.jenkinsci.plugins.fabric8.steps.WaitUntilPullRequestMerged
 
+def call(WaitUntilPullRequestMerged.Arguments config) {
   def flow = new Fabric8Commands()
   def githubToken = flow.getGitHubToken()
 
-  echo "pull request id ${config.prId}"
-  String id = config.prId
+  def id = config.id
+  def project = config.project
+  echo "pull request id ${id}"
 
   def branchName
   def notified = false
 
   // wait until the PR is merged, if there's a merge conflict the notify and wait until PR is finally merged
   waitUntil {
-    echo "https://api.github.com/repos/${config.name}/pulls/${id}"
+    echo "https://api.github.com/repos/${project}/pulls/${id}"
 
-    def apiUrl = new URL("https://api.github.com/repos/${config.name}/pulls/${id}")
+    def apiUrl = new URL("https://api.github.com/repos/${project}/pulls/${id}")
 
     def rs = restGetURL {
       authString = githubToken
@@ -41,22 +38,22 @@ def call(body) {
     def sha = rs.head.sha
     echo "checking status of commit ${sha}"
 
-    apiUrl = new URL("https://api.github.com/repos/${config.name}/commits/${sha}/status")
+    apiUrl = new URL("https://api.github.com/repos/${project}/commits/${sha}/status")
     rs = restGetURL {
       authString = githubToken
       url = apiUrl
     }
 
-    echo "${config.name} Pull request ${id} state ${rs.state}"
+    echo "${project} Pull request ${id} state ${rs.state}"
 
-    def values = config.name.split('/')
+    def values = project.split('/')
     def prj = values[1]
 
     if (rs.state == 'failure' && !notified) {
       def message = """
 Pull request was not automatically merged.  Please fix and update Pull Request to continue with release...
 ```
-git clone git@github.com:${config.name}.git
+git clone git@github.com:${project}.git
 cd ${prj}
 git fetch origin pull/${id}/head:fixPR${id}
 git checkout fixPR${id}

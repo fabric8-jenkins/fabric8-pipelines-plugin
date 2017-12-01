@@ -3,86 +3,69 @@ package dsl
 import io.fabric8.utils.Strings
 import org.apache.maven.model.Model
 import org.jenkinsci.plugins.fabric8.model.ServiceConstants
-import org.jenkinsci.plugins.fabric8.model.WaitForArtifactInfo
+import org.jenkinsci.plugins.fabric8.steps.PromoteArtifacts
+import org.jenkinsci.plugins.fabric8.steps.PromoteImages
 import org.jenkinsci.plugins.fabric8.steps.ReleaseProject
+import org.jenkinsci.plugins.fabric8.steps.TagImages
+import org.jenkinsci.plugins.fabric8.steps.WaitUntilArtifactSyncedWithCentral
+import org.jenkinsci.plugins.fabric8.steps.WaitUntilPullRequestMerged
 
 def call(ReleaseProject.Arguments arguments) {
   echo "releaseProject ${arguments}"
 
   def flow = new Fabric8Commands()
-  def project = arguments.project
-  def releaseVersion = arguments.releaseVersion
 
-  String pullRequestId = promoteArtifacts {
-    project = project
-    releaseVersion = releaseVersion
-    repoIds = arguments.repoIds
-    useGitTagForNextVersion = arguments.useGitTagForNextVersion
-    helmPush = arguments.helmPush
-    containerName = arguments.containerName
-  }
+  PromoteArtifacts.Arguments promoteArtifactsArguments = arguments.createPromoteArtifactsArguments()
+  String pullRequestId = promoteArtifacts(promoteArtifactsArguments)
 
-  def dockerOrganisation = arguments.dockerOrganisation
-  def promoteToDockerRegistry = arguments.promoteToDockerRegistry
-  def promoteDockerImages = arguments.promoteDockerImages
-
-  if (dockerOrganisation && promoteDockerImages.size() > 0) {
-    promoteImages {
-      toRegistry = promoteToDockerRegistry
-      org = dockerOrganisation
-      project = project
-      images = promoteDockerImages
-      tag = releaseVersion
+  PromoteImages.Arguments promoteImagesArguments = arguments.createPromoteImagesArguments()
+  def promoteDockerImages = promoteImagesArguments.images
+  if (promoteDockerImages.size() > 0) {
+    def validation = promoteImagesArguments.validate()
+    if (validation != null) {
+      error validation
+    } else {
+      promoteImages(promoteImagesArguments)
     }
   }
 
-  def tagDockerImages = arguments.extraImagesToTag
 
+  TagImages.Arguments tagImagesArguments = arguments.createTagImagesArguments()
+  def tagDockerImages = tagImagesArguments.images
   if (tagDockerImages && tagDockerImages.size() > 0) {
-    tagImages {
-      images = tagDockerImages
-      tag = releaseVersion
-    }
+    tagImages(tagImagesArguments)
   }
 
   if (pullRequestId != null) {
-    waitUntilPullRequestMerged {
-      name = project
-      prId = pullRequestId
-    }
+    WaitUntilPullRequestMerged.Arguments waitUntilPullRequestMergedArguments = arguments.createWaitUntilPullRequestMergedArguments(pullRequestId)
+    waitUntilPullRequestMerged(waitUntilPullRequestMergedArguments)
   }
 
-  def waitInfo = arguments.createWaitForArtifactInfo()
+  WaitUntilArtifactSyncedWithCentral.Arguments waitUntilArtifactSyncedWithCentralArguments = arguments.createWaitUntilArtifactSyncedWithCentralArguments()
   Model mavenProject = flow.loadMavenPom()
-  defaultWaitInfoFromPom(waitInfo, mavenProject)
+  defaultWaitInfoFromPom(waitUntilArtifactSyncedWithCentralArguments, mavenProject)
 
-  if (waitInfo.isValid()) {
-    waitUntilArtifactSyncedWithCentral {
-      repositoryUrl = waitInfo.repositoryUrl
-      groupId = waitInfo.groupId
-      artifactId = waitInfo.artifactId
-      version = releaseVersion
-      ext = waitInfo.extension
-    }
-  }
+  if (waitUntilArtifactSyncedWithCentralArguments.isValid()) {
+    waitUntilArtifactSyncedWithCentral(waitUntilArtifactSyncedWithCentralArguments)
+  } 
 }
 
 /**
  * If no properties are configured explicitly lets try default them from the pom.xml
  */
-def defaultWaitInfoFromPom(WaitForArtifactInfo info, Model mavenProject) {
+def defaultWaitInfoFromPom(WaitUntilArtifactSyncedWithCentral.Arguments arguments, Model mavenProject) {
   if (mavenProject != null) {
-    if (Strings.isNullOrBlank(info.groupId)) {
-      info.groupId = mavenProject.groupId
+    if (Strings.isNullOrBlank(arguments.groupId)) {
+      arguments.groupId = mavenProject.groupId
     }
-    if (Strings.isNullOrBlank(info.artifactId)) {
-      info.artifactId = mavenProject.artifactId
+    if (Strings.isNullOrBlank(arguments.artifactId)) {
+      arguments.artifactId = mavenProject.artifactId
     }
-    if (Strings.isNullOrBlank(info.extension)) {
-      info.extension = "pom";
+    if (Strings.isNullOrBlank(arguments.extension)) {
+      arguments.extension = "pom";
     }
-    if (Strings.isNullOrBlank(info.repositoryUrl)) {
-      info.repositoryUrl = ServiceConstants.MAVEN_CENTRAL
+    if (Strings.isNullOrBlank(arguments.repositoryUrl)) {
+      arguments.repositoryUrl = ServiceConstants.MAVEN_CENTRAL
     }
   }
 }

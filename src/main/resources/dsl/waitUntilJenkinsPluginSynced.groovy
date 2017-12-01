@@ -1,12 +1,8 @@
 package dsl
 
-def call(body) {
-  // evaluate the body block, and collect configuration into the object
-  def config = [:]
-  body.resolveStrategy = Closure.DELEGATE_FIRST
-  body.delegate = config
-  body()
+import org.jenkinsci.plugins.fabric8.steps.WaitUntilJenkinsPluginSynced
 
+def call(WaitUntilJenkinsPluginSynced.Arguments config) {
   def flow = new Fabric8Commands()
 
   def repo = config.repo

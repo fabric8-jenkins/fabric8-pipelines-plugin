@@ -1,17 +1,13 @@
 package dsl
 
-def call(body) {
-  // evaluate the body block, and collect configuration into the object
-  def config = [:]
-  body.resolveStrategy = Closure.DELEGATE_FIRST
-  body.delegate = config
-  body()
+import org.jenkinsci.plugins.fabric8.steps.PromoteArtifacts
 
+def call(PromoteArtifacts.Arguments config) {
   def flow = new Fabric8Commands()
   def name = config.project
-  def version = config.releaseVersion
+  def version = config.version
   def repoIds = config.repoIds
-  def containerName = config.containerName ?: 'maven'
+  def containerName = config.containerName
 
   if (repoIds && repoIds.size() > 0) {
     container(name: containerName) {
@@ -28,8 +24,8 @@ def call(body) {
         flow.helm()
       }
 
-      if (!config.useGitTagForNextVersion) {
-        flow.updateNextDevelopmentVersion(version, config.setVersionExtraArgs ?: "")
+      if (version && config.updateNextDevelopmentVersion) {
+        flow.updateNextDevelopmentVersion(version, config.updateNextDevelopmentVersionArguments ?: "")
         return flow.createPullRequest("[CD] Release ${version}", "${config.project}", "release-v${version}")
       }
     }

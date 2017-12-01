@@ -46,14 +46,14 @@ public class WaitUntilArtifactSyncedWithCentral extends CommandSupport implement
         final String groupId = config.groupId;
         final String artifactId = config.artifactId;
         final String version = config.version;
-        final String ext = config.ext;
+        final String ext = config.extension;
 
         if (Strings.isNullOrEmpty(groupId) || Strings.isNullOrEmpty(artifactId) || Strings.isNullOrEmpty(version)) {
             error("Must specify full maven coordinates but was given: " + config);
             return null;
         }
 
-        waitUntil(() -> retry(3, () -> flow.isArtifactAvailableInRepo(config.repo, groupId, artifactId, version, ext)));
+        waitUntil(() -> retry(3, () -> flow.isArtifactAvailableInRepo(config.repositoryUrl, groupId, artifactId, version, ext)));
 
         String message = "" + groupId + "/" + artifactId + " " + version + " released and available in maven central";
         echo(message);
@@ -65,7 +65,7 @@ public class WaitUntilArtifactSyncedWithCentral extends CommandSupport implement
         private static final long serialVersionUID = 1L;
 
         @Argument
-        private String repo = ServiceConstants.MAVEN_CENTRAL;
+        private String repositoryUrl = ServiceConstants.MAVEN_CENTRAL;
         @Argument
         @NotEmpty
         private String groupId = "";
@@ -76,7 +76,7 @@ public class WaitUntilArtifactSyncedWithCentral extends CommandSupport implement
         @NotEmpty
         private String version = "";
         @Argument
-        private String ext = "jar";
+        private String extension = "jar";
 
         public Arguments() {
         }
@@ -90,20 +90,29 @@ public class WaitUntilArtifactSyncedWithCentral extends CommandSupport implement
         @Override
         public String toString() {
             return "Arguments{" +
-                    "repo='" + repo + '\'' +
+                    "repo='" + repositoryUrl + '\'' +
                     ", groupId='" + groupId + '\'' +
                     ", artifactId='" + artifactId + '\'' +
                     ", version='" + version + '\'' +
-                    ", ext='" + ext + '\'' +
+                    ", ext='" + extension + '\'' +
                     '}';
         }
 
-        public String getRepo() {
-            return repo;
+
+        /**
+         * Returns true if the properties are populated with enough values to watch for an artifact
+         */
+        public boolean isValid() {
+            return io.fabric8.utils.Strings.notEmpty(repositoryUrl) && io.fabric8.utils.Strings.notEmpty(groupId) && io.fabric8.utils.Strings.notEmpty(artifactId) && io.fabric8.utils.Strings.notEmpty(extension);
         }
 
-        public void setRepo(String repo) {
-            this.repo = repo;
+
+        public String getRepositoryUrl() {
+            return repositoryUrl;
+        }
+
+        public void setRepositoryUrl(String repositoryUrl) {
+            this.repositoryUrl = repositoryUrl;
         }
 
         public String getGroupId() {
@@ -130,12 +139,12 @@ public class WaitUntilArtifactSyncedWithCentral extends CommandSupport implement
             this.version = version;
         }
 
-        public String getExt() {
-            return ext;
+        public String getExtension() {
+            return extension;
         }
 
-        public void setExt(String ext) {
-            this.ext = ext;
+        public void setExtension(String extension) {
+            this.extension = extension;
         }
     }
 

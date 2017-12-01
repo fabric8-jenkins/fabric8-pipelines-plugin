@@ -991,4 +991,28 @@ def openShiftImageStreamInstall(String name, String location) {
   return false;
 }
 
+@NonCPS
+def dockerRegistryPrefix() {
+  def registryHost = dockerRegistryHostAndPort(null)
+  def registryPrefix = ""
+  if (registryHost) {
+    registryPrefix = "${registryHost}/"
+  }
+  return registryPrefix
+}
+
+@NonCPS
+def dockerRegistryHostAndPort(String defaultRegistryHost = "fabric8-docker-registry") {
+  def registryHost = env.FABRIC8_DOCKER_REGISTRY_SERVICE_HOST
+  if (!registryHost) {
+    echo "WARNING you don't seem to be running the fabric8-docker-registry service!!!"
+    registryHost = defaultRegistryHost
+  }
+  def registryPort = env.FABRIC8_DOCKER_REGISTRY_SERVICE_PORT
+  if (registryPort && registryHost) {
+    registryHost = "${registryHost}:${registryPort}"
+  }
+  return registryHost
+}
+
 return this

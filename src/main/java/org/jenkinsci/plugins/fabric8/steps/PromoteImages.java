@@ -95,6 +95,8 @@ public class PromoteImages extends CommandSupport implements Function<PromoteIma
         private String toRegistry = "";
         @Argument
         private List<String> images = new ArrayList<>();
+        @Argument
+        private String containerName = "clients";
 
         public Arguments() {
         }
@@ -106,6 +108,20 @@ public class PromoteImages extends CommandSupport implements Function<PromoteIma
             this.images = images;
         }
 
+        /**
+         * Returns why this step cannot be invoked or null if its valid
+         */
+        public String validate() {
+            if (images != null && !images.isEmpty()) {
+                if (Strings.isNullOrEmpty(org)) {
+                    return "Cannot promote images " + images + " as missing the dockerOrganisation argument: " + this;
+                }
+                if (Strings.isNullOrEmpty(toRegistry)) {
+                    return "Cannot promote images " + images + " as missing the promoteToDockerRegistry argument: " + this;
+                }
+            }
+            return null;
+        }
 
         public List<String> getImages() {
             return images;
@@ -137,6 +153,14 @@ public class PromoteImages extends CommandSupport implements Function<PromoteIma
 
         public void setToRegistry(String toRegistry) {
             this.toRegistry = toRegistry;
+        }
+
+        public String getContainerName() {
+            return containerName;
+        }
+
+        public void setContainerName(String containerName) {
+            this.containerName = containerName;
         }
     }
 }

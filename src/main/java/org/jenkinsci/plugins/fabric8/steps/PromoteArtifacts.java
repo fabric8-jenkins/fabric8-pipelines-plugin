@@ -106,6 +106,16 @@ public class PromoteArtifacts extends CommandSupport implements Function<Promote
             this.repoIds = repoIds;
         }
 
+        public Arguments(String project, String version, List<String> repoIds, String containerName, boolean helmPush, boolean updateNextDevelopmentVersion, String updateNextDevelopmentVersionArguments) {
+            this.project = project;
+            this.version = version;
+            this.repoIds = repoIds;
+            this.containerName = containerName;
+            this.helmPush = helmPush;
+            this.updateNextDevelopmentVersion = updateNextDevelopmentVersion;
+            this.updateNextDevelopmentVersionArguments = updateNextDevelopmentVersionArguments;
+        }
+
         public String getProject() {
             return project;
         }

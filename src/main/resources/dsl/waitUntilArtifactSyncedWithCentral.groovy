@@ -1,14 +1,9 @@
 package dsl
 
 import org.jenkinsci.plugins.fabric8.model.ServiceConstants
+import org.jenkinsci.plugins.fabric8.steps.WaitUntilArtifactSyncedWithCentral
 
-def call(body) {
-  // evaluate the body block, and collect configuration into the object
-  def config = [:]
-  body.resolveStrategy = Closure.DELEGATE_FIRST
-  body.delegate = config
-  body()
-
+def call(WaitUntilArtifactSyncedWithCentral.Arguments config) {
   def flow = new Fabric8Commands()
 
   // mandatory properties
@@ -17,7 +12,7 @@ def call(body) {
   def version = config.version
 
   def repo = config.repositoryUrl ?: ServiceConstants.MAVEN_CENTRAL
-  def ext = config.ext ?: 'jar'
+  def ext = config.extension ?: 'jar'
 
   if (groupId && artifactId && version) {
     echo "waiting for artifact ${groupId}/${artifactId}/${version}/${ext} to be in repo ${repo}"

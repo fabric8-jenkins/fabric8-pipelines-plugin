@@ -19,11 +19,9 @@ import io.fabric8.utils.Strings;
 import io.jenkins.functions.Argument;
 import io.jenkins.functions.Step;
 import org.jenkinsci.plugins.fabric8.CommandSupport;
-import org.jenkinsci.plugins.fabric8.Logger;
 import org.jenkinsci.plugins.fabric8.helpers.ConfigHelper;
 import org.jenkinsci.plugins.fabric8.model.ServiceConstants;
 import org.jenkinsci.plugins.fabric8.model.StagedProjectInfo;
-import org.jenkinsci.plugins.fabric8.model.WaitForArtifactInfo;
 import org.kohsuke.github.GHPullRequest;
 
 import javax.validation.constraints.NotEmpty;
@@ -47,7 +45,7 @@ public class ReleaseProject extends CommandSupport implements Function<ReleasePr
     public Boolean apply(Arguments config) {
         GHPullRequest pullRequest = new PromoteArtifacts(this).apply(config.createPromoteArtifactsArguments());
 
-        PromoteImages.Arguments promoteImagesArgs = config.createPromoteImagesArguments(getLogger());
+        PromoteImages.Arguments promoteImagesArgs = config.createPromoteImagesArguments();
         if (promoteImagesArgs != null) {
             new PromoteImages(this).apply(promoteImagesArgs);
         }
@@ -62,7 +60,7 @@ public class ReleaseProject extends CommandSupport implements Function<ReleasePr
             new WaitUntilPullRequestMerged(this).apply(waitUntilPullRequestMergedArguments);
         }
 
-        WaitUntilArtifactSyncedWithCentral.Arguments waitUntilArtifactSyncedWithCentralArguments = config.createWaitUntilArtifactSyncedWithCentralArguments(getLogger());
+        WaitUntilArtifactSyncedWithCentral.Arguments waitUntilArtifactSyncedWithCentralArguments = config.createWaitUntilArtifactSyncedWithCentralArguments();
         if (waitUntilArtifactSyncedWithCentralArguments != null) {
             new WaitUntilArtifactSyncedWithCentral(this).apply(waitUntilArtifactSyncedWithCentralArguments);
         }
@@ -102,7 +100,10 @@ public class ReleaseProject extends CommandSupport implements Function<ReleasePr
         private boolean useGitTagForNextVersion;
         @Argument
         private boolean helmPush;
-
+        @Argument
+        private boolean updateNextDevelopmentVersion;
+        @Argument
+        private String updateNextDevelopmentVersionArguments = "";
 
         public static Arguments newInstance(Map<String,Object> map) {
             Arguments answer = new Arguments();
@@ -141,33 +142,18 @@ public class ReleaseProject extends CommandSupport implements Function<ReleasePr
          * Returns the arguments for invoking {@link PromoteArtifacts}
          */
         public PromoteArtifacts.Arguments createPromoteArtifactsArguments() {
-            return new PromoteArtifacts.Arguments(getProject(), getReleaseVersion(), getRepoIds());
+            return new PromoteArtifacts.Arguments(getProject(), getReleaseVersion(), getRepoIds(), getContainerName(), isHelmPush(), isUpdateNextDevelopmentVersion(), getUpdateNextDevelopmentVersionArguments());
         }
 
-        public WaitForArtifactInfo createWaitForArtifactInfo() {
-            return new WaitForArtifactInfo(repositoryToWaitFor, groupId, artifactIdToWaitFor, artifactExtensionToWaitFor);
-        }
-        
         /**
          * Return the arguments for invoking {@link PromoteImages} or null if there is not sufficient configuration
          * to promote images
          */
-        public PromoteImages.Arguments createPromoteImagesArguments(Logger logger) {
+        public PromoteImages.Arguments createPromoteImagesArguments() {
             String org = getDockerOrganisation();
             String toRegistry = getPromoteToDockerRegistry();
             List<String> images = getPromoteDockerImages();
-            if (images != null && !images.isEmpty()) {
-                if (Strings.isNullOrBlank(org)) {
-                    logger.warn("Cannot promote images " + images + " as missing the dockerOrganisation argument: " + this);
-                    return null;
-                }
-                if (Strings.isNullOrBlank(toRegistry)) {
-                    logger.warn("Cannot promote images " + images + " as missing the promoteToDockerRegistry argument: " + this);
-                    return null;
-                }
-                return new PromoteImages.Arguments(getReleaseVersion(), org, toRegistry, images);
-            }
-            return null;
+            return new PromoteImages.Arguments(getReleaseVersion(), org, toRegistry, images);
         }
 
         /**
@@ -193,18 +179,13 @@ public class ReleaseProject extends CommandSupport implements Function<ReleasePr
         /**
          * Returns the arguments for invoking {@link WaitUntilArtifactSyncedWithCentral}
          */
-        public WaitUntilArtifactSyncedWithCentral.Arguments createWaitUntilArtifactSyncedWithCentralArguments(Logger logger) {
-            if (Strings.isNullOrBlank(groupId) || Strings.isNullOrBlank(artifactIdToWaitFor)) {
-                logger.warn("Cannot wait for artifacts to be synced to central repository as require groupId and artifactIdToWaitFor properties. Was given " + this);
-                return null;
-            }
-
+        public WaitUntilArtifactSyncedWithCentral.Arguments createWaitUntilArtifactSyncedWithCentralArguments() {
             WaitUntilArtifactSyncedWithCentral.Arguments arguments = new WaitUntilArtifactSyncedWithCentral.Arguments(groupId, artifactIdToWaitFor, getReleaseVersion());
             if (Strings.notEmpty(artifactExtensionToWaitFor)) {
-                arguments.setExt(artifactExtensionToWaitFor);
+                arguments.setExtension(artifactExtensionToWaitFor);
             }
             if (Strings.notEmpty(repositoryToWaitFor)) {
-                arguments.setRepo(repositoryToWaitFor);
+                arguments.setRepositoryUrl(repositoryToWaitFor);
             }
             return arguments;
         }
@@ -322,6 +303,22 @@ public class ReleaseProject extends CommandSupport implements Function<ReleasePr
 
         public void setHelmPush(boolean helmPush) {
             this.helmPush = helmPush;
+        }
+
+        public boolean isUpdateNextDevelopmentVersion() {
+            return updateNextDevelopmentVersion;
+        }
+
+        public void setUpdateNextDevelopmentVersion(boolean updateNextDevelopmentVersion) {
+            this.updateNextDevelopmentVersion = updateNextDevelopmentVersion;
+        }
+
+        public String getUpdateNextDevelopmentVersionArguments() {
+            return updateNextDevelopmentVersionArguments;
+        }
+
+        public void setUpdateNextDevelopmentVersionArguments(String updateNextDevelopmentVersionArguments) {
+            this.updateNextDevelopmentVersionArguments = updateNextDevelopmentVersionArguments;
         }
     }
 }

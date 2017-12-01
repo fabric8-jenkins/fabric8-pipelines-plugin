@@ -78,15 +78,9 @@ def call(StageProject.Arguments arguments) {
 
 def stageSonartypeRepo(Fabric8Commands flow, String serverId, String nexusUrl, String containerName) {
   try {
-    def registryHost = env.FABRIC8_DOCKER_REGISTRY_SERVICE_HOST
-    if (!registryHost) {
-      echo "WARNING you don't seem to be running the fabric8-docker-registry service!!!"
-      registryHost = "http://fabric8-docker-registry"
-    }
-    def registryPort = env.FABRIC8_DOCKER_REGISTRY_SERVICE_PORT
-    if (registryPort) {
-      registryHost = "${registryHost}:${registryPort}"
-    }
+    def registryHost = flow.dockerRegistryHostAndPort()
+
+    registryHost = "http://${registryHost}"
 
     echo "using docker registry: ${registryHost}, serverId: ${serverId}, nexusUrl: ${nexusUrl} and container: ${containerName}"
 
