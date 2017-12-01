@@ -29,11 +29,12 @@ def call(ReleaseProject.Arguments arguments) {
     }
   }
 
-
   TagImages.Arguments tagImagesArguments = arguments.createTagImagesArguments()
-  def tagDockerImages = tagImagesArguments.images
-  if (tagDockerImages && tagDockerImages.size() > 0) {
-    tagImages(tagImagesArguments)
+  if (tagImagesArguments) {
+    def tagDockerImages = tagImagesArguments.images
+    if (tagDockerImages && tagDockerImages.size() > 0) {
+      tagImages(tagImagesArguments)
+    }
   }
 
   if (pullRequestId != null) {
