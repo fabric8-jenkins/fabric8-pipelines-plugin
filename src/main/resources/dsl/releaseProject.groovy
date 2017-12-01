@@ -9,26 +9,28 @@ def call(Map config = [:]) {
   def promoteDockerImages = config.imagesToPromoteToDockerHub ?: []
   def tagDockerImages = config.extraImagesToTag ?: []
   def container = config.containerName ?: 'maven'
+  def dockerOrganisation = config.dockerOrganisation
 
   String pullRequestId = promoteArtifacts {
-    projectStagingDetails = config.stagedProject
     project = projectName
+    releaseVersion = releaseVersion
+    repoIds = repoIds
     useGitTagForNextVersion = config.useGitTagForNextVersion
     helmPush = config.helmPush
     containerName = container
   }
 
-  if (promoteDockerImages.size() > 0) {
+  if (dockerOrganisation && promoteDockerImages.size() > 0) {
     promoteImages {
       toRegistry = config.promoteToDockerRegistry
-      org = config.dockerOrganisation
+      org = dockerOrganisation
       project = projectName
       images = promoteDockerImages
       tag = releaseVersion
     }
   }
 
-  if (tagDockerImages.size() > 0) {
+  if (tagDockerImages && tagDockerImages.size() > 0) {
     tagImages {
       images = tagDockerImages
       tag = releaseVersion
@@ -37,16 +39,24 @@ def call(Map config = [:]) {
 
   if (pullRequestId != null) {
     waitUntilPullRequestMerged {
-      name = config.project
+      name = projectName
       prId = pullRequestId
     }
   }
 
-  waitUntilArtifactSyncedWithCentral {
-    repo = 'http://central.maven.org/maven2/'
-    groupId = config.groupId
-    artifactId = config.artifactIdToWatchInCentral
-    version = releaseVersion
-    ext = config.artifactExtensionToWatchInCentral
+  // TODO default these from the pom if not specified...
+  def centralRepo = 'http://central.maven.org/maven2/'
+  def groupId = config.groupId
+  def artifactIdToWatchInCentral = config.artifactIdToWatchInCentral
+  def artifactExtensionToWatchInCentral = config.artifactExtensionToWatchInCentral
+
+  if (groupId && artifactIdToWatchInCentral && artifactExtensionToWatchInCentral) {
+    waitUntilArtifactSyncedWithCentral {
+      repo = centralRepo
+      groupId = groupId
+      artifactId = artifactIdToWatchInCentral
+      version = releaseVersion
+      ext = artifactExtensionToWatchInCentral
+    }
   }
 }
