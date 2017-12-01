@@ -1,5 +1,7 @@
 package dsl
 
+import org.jenkinsci.plugins.fabric8.model.StagedProjectInfo
+
 
 def call(Map config = [:]) {
   echo "stageProject ${config}"
@@ -18,6 +20,13 @@ def call(Map config = [:]) {
   }
   println "stageProject created flow ${flow}"
 
+  def project = config.project
+  if (!project) {
+    currentBuild.result = 'FAILURE'
+    error "ERROR missing `project` property"
+    return false
+  }
+
   def extraStageImages = config.extraImagesToStage ?: []
   def extraSetVersionArgs = config.setVersionExtraArgs ?: ""
   def containerName = config.containerName ?: 'maven'
@@ -34,7 +43,7 @@ def call(Map config = [:]) {
   echo "called setupStageWorkspace"
 
   // TODO determine the stage repo / id / whether to use staging... - maybe default to staging if sonatype or configured?
-  def nexusUrl="https://oss.sonatype.org"
+  def nexusUrl = "https://oss.sonatype.org"
   def serverId = "oss-sonatype-staging"
   def skipTests = config.skipTests ?: false
 
@@ -84,42 +93,43 @@ def call(Map config = [:]) {
   }
 */
 
-  return [config.project, releaseVersion, repoIds]
+  return new StagedProjectInfo(project, releaseVersion, repoIds)
 }
 
 
 def stageSonartypeRepo(Fabric8Commands flow, String serverId, String nexusUrl) {
-    try {
-        def registryHost = env.FABRIC8_DOCKER_REGISTRY_SERVICE_HOST
-        if (!registryHost) {
-            echo "WARNING you don't seem to be running the fabric8-docker-registry service!!!"
-            registryHost = "http://fabric8-docker-registry"
-        }
-        def registryPort = env.FABRIC8_DOCKER_REGISTRY_SERVICE_PORT
-        if (registryPort) {
-            registryHost = "${registryHost}:${registryPort}"
-        }
-
-        echo "using docker registry: ${registryHost}"
-
-        sh "mvn clean -B"
-        sh "mvn -V -B -e -U install org.sonatype.plugins:nexus-staging-maven-plugin:1.6.7:deploy -P release -P openshift -DnexusUrl=https://oss.sonatype.org -DserverId=oss-sonatype-staging -Ddocker.push.registry=${registryHost}"
-
-        // lets not archive artifacts until we if we just use nexus or a content repo
-        //step([$class: 'ArtifactArchiver', artifacts: '**/target/*.jar', fingerprint: true])
-
-    } catch (err) {
-        hubotSend room: 'release', message: "Release failed when building and deploying to Nexus ${err}", failOnError: false
-        currentBuild.result = 'FAILURE'
-        error "ERROR Release failed when building and deploying to Nexus ${err}"
+  try {
+    def registryHost = env.FABRIC8_DOCKER_REGISTRY_SERVICE_HOST
+    if (!registryHost) {
+      echo "WARNING you don't seem to be running the fabric8-docker-registry service!!!"
+      registryHost = "http://fabric8-docker-registry"
     }
-    // the sonartype staging repo id gets written to a file in the workspace
-    return flow.getRepoIds()
+    def registryPort = env.FABRIC8_DOCKER_REGISTRY_SERVICE_PORT
+    if (registryPort) {
+      registryHost = "${registryHost}:${registryPort}"
+    }
+
+    echo "using docker registry: ${registryHost}"
+
+    sh "mvn clean -B"
+    sh "mvn -V -B -e -U install org.sonatype.plugins:nexus-staging-maven-plugin:1.6.7:deploy -P release -P openshift -DnexusUrl=https://oss.sonatype.org -DserverId=oss-sonatype-staging -Ddocker.push.registry=${registryHost}"
+
+    // lets not archive artifacts until we if we just use nexus or a content repo
+    //step([$class: 'ArtifactArchiver', artifacts: '**/target/*.jar', fingerprint: true])
+
+  } catch (err) {
+    hubotSend room: 'release', message: "Release failed when building and deploying to Nexus ${err}", failOnError: false
+    currentBuild.result = 'FAILURE'
+    error "ERROR Release failed when building and deploying to Nexus ${err}"
+  }
+  // the sonartype staging repo id gets written to a file in the workspace
+  return flow.getRepoIds()
 }
 
 def mavenDeploy(skipTests) {
   sh "mvn clean -B -e -U deploy -Dmaven.test.skip=${skipTests} -P openshift,artifact-repository"
 }
+
 def setupStageWorkspace(Fabric8Commands flow, boolean useMavenForNextVersion, String mvnExtraArgs, String containerName, String clientsContainerName) {
   container(clientsContainerName) {
     sh "git config user.email fabric8-admin@googlegroups.com"

@@ -6,6 +6,7 @@ import org.jenkinsci.plugins.fabric8.ShellFacade
 import org.jenkinsci.plugins.fabric8.Utils
 import org.jenkinsci.plugins.fabric8.helpers.GitHelper
 import org.jenkinsci.plugins.fabric8.helpers.GitRepositoryInfo
+import org.jenkinsci.plugins.fabric8.model.StagedProjectInfo
 import org.jenkinsci.plugins.fabric8.steps.MavenFlow
 
 def call(Map config = [:]) {
@@ -174,10 +175,11 @@ Boolean cdPipeline(MavenFlow.Arguments arguments) {
   }
   println "Staging project"
 
-  def result = stageProject()
+  StagedProjectInfo result = stageProject(project: repositoryInfo.project)
 
   println "Staging result = ${result}"
 
+  return releaseProject(project: result.project, releaseVersion: result.releaseVersion, repoIds: result.repoIds)
 /*
   StageProject.Arguments stageProjectArguments = arguments.createStageProjectArguments(getLogger(), repositoryInfo);
   StagedProjectInfo stagedProject = new StageProject(this).apply(stageProjectArguments);
@@ -185,7 +187,6 @@ Boolean cdPipeline(MavenFlow.Arguments arguments) {
   ReleaseProject.Arguments releaseProjectArguments = arguments.createReleaseProjectArguments(getLogger(), stagedProject);
   return new ReleaseProject(this).apply(releaseProjectArguments);
 */
-  return false
 }
 
 String remoteGitCloneUrl(GitRepositoryInfo info) {
@@ -196,32 +197,32 @@ String remoteGitCloneUrl(GitRepositoryInfo info) {
 }
 
 String doFindGitCloneURL() {
-    String text = getGitConfigFile(new File(pwd()));
-    if (Strings.isNullOrBlank(text)) {
-        text = readFile(".git/config");
-    }
-    println("\nfindGitCloneURL() text: " + text);
-    if (Strings.notEmpty(text)) {
-        return GitHelper.extractGitUrl(text);
-    }
-    return null;
+  String text = getGitConfigFile(new File(pwd()));
+  if (Strings.isNullOrBlank(text)) {
+    text = readFile(".git/config");
+  }
+  println("\nfindGitCloneURL() text: " + text);
+  if (Strings.notEmpty(text)) {
+    return GitHelper.extractGitUrl(text);
+  }
+  return null;
 }
 
 
 String getGitConfigFile(File dir) {
-    String path = new File(dir, ".git/config").getAbsolutePath();
-    String text = readFile(path);
-    if (text != null) {
-        text = text.trim();
-        if (text.length() > 0) {
-            return text;
-        }
+  String path = new File(dir, ".git/config").getAbsolutePath();
+  String text = readFile(path);
+  if (text != null) {
+    text = text.trim();
+    if (text.length() > 0) {
+      return text;
     }
-    File file = dir.getParentFile();
-    if (file != null) {
-        return getGitConfigFile(file);
-    }
-    return null;
+  }
+  File file = dir.getParentFile();
+  if (file != null) {
+    return getGitConfigFile(file);
+  }
+  return null;
 }
 
 String findBranch() {
@@ -268,7 +269,6 @@ String findBranch() {
   }
   return branch;
 }
-
 
 // TODO common stuff
 def logError(Throwable t) {
