@@ -180,13 +180,6 @@ Boolean cdPipeline(MavenFlow.Arguments arguments) {
   println "Staging result = ${result}"
 
   return releaseProject(project: result.project, releaseVersion: result.releaseVersion, repoIds: result.repoIds)
-/*
-  StageProject.Arguments stageProjectArguments = arguments.createStageProjectArguments(getLogger(), repositoryInfo);
-  StagedProjectInfo stagedProject = new StageProject(this).apply(stageProjectArguments);
-
-  ReleaseProject.Arguments releaseProjectArguments = arguments.createReleaseProjectArguments(getLogger(), stagedProject);
-  return new ReleaseProject(this).apply(releaseProjectArguments);
-*/
 }
 
 String remoteGitCloneUrl(GitRepositoryInfo info) {

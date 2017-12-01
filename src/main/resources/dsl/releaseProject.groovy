@@ -1,34 +1,44 @@
 package dsl
 
+import io.fabric8.utils.Strings
+import org.apache.maven.model.Model
+import org.jenkinsci.plugins.fabric8.model.ServiceConstants
+import org.jenkinsci.plugins.fabric8.model.WaitForArtifactInfo
+import org.jenkinsci.plugins.fabric8.steps.ReleaseProject
+
 def call(Map config = [:]) {
   echo "releaseProject ${config}"
 
-  def projectName = config.project
-  def releaseVersion = config.releaseVersion
-  def repoIds = config.repoIds
-  def promoteDockerImages = config.imagesToPromoteToDockerHub ?: []
-  def tagDockerImages = config.extraImagesToTag ?: []
-  def container = config.containerName ?: 'maven'
-  def dockerOrganisation = config.dockerOrganisation
+  ReleaseProject.Arguments arguments = ReleaseProject.Arguments.newInstance(config)
+
+  def flow = new Fabric8Commands()
+  def project = arguments.project
+  def releaseVersion = arguments.releaseVersion
 
   String pullRequestId = promoteArtifacts {
-    project = projectName
+    project = project
     releaseVersion = releaseVersion
-    repoIds = repoIds
-    useGitTagForNextVersion = config.useGitTagForNextVersion
-    helmPush = config.helmPush
-    containerName = container
+    repoIds = arguments.repoIds
+    useGitTagForNextVersion = arguments.useGitTagForNextVersion
+    helmPush = arguments.helmPush
+    containerName = arguments.containerName
   }
+
+  def dockerOrganisation = arguments.dockerOrganisation
+  def promoteToDockerRegistry = arguments.promoteToDockerRegistry
+  def promoteDockerImages = arguments.promoteDockerImages
 
   if (dockerOrganisation && promoteDockerImages.size() > 0) {
     promoteImages {
-      toRegistry = config.promoteToDockerRegistry
+      toRegistry = promoteToDockerRegistry
       org = dockerOrganisation
-      project = projectName
+      project = project
       images = promoteDockerImages
       tag = releaseVersion
     }
   }
+
+  def tagDockerImages = arguments.extraImagesToTag
 
   if (tagDockerImages && tagDockerImages.size() > 0) {
     tagImages {
@@ -39,24 +49,44 @@ def call(Map config = [:]) {
 
   if (pullRequestId != null) {
     waitUntilPullRequestMerged {
-      name = projectName
+      name = project
       prId = pullRequestId
     }
   }
 
-  // TODO default these from the pom if not specified...
-  def centralRepo = 'http://central.maven.org/maven2/'
-  def groupId = config.groupId
-  def artifactIdToWatchInCentral = config.artifactIdToWatchInCentral
-  def artifactExtensionToWatchInCentral = config.artifactExtensionToWatchInCentral
+  def waitInfo = arguments.createWaitForArtifactInfo()
+  Model mavenProject = flow.loadMavenPom()
+  defaultWaitInfoFromPom(waitInfo, mavenProject)
 
-  if (groupId && artifactIdToWatchInCentral && artifactExtensionToWatchInCentral) {
+  if (waitInfo.isValid()) {
     waitUntilArtifactSyncedWithCentral {
-      repo = centralRepo
-      groupId = groupId
-      artifactId = artifactIdToWatchInCentral
+      repositoryUrl = waitInfo.repositoryUrl
+      groupId = waitInfo.groupId
+      artifactId = waitInfo.artifactId
       version = releaseVersion
-      ext = artifactExtensionToWatchInCentral
+      ext = waitInfo.extension
     }
   }
 }
+
+/**
+ * If no properties are configured explicitly lets try default them from the pom.xml
+ */
+def defaultWaitInfoFromPom(WaitForArtifactInfo info, Model mavenProject) {
+  if (mavenProject != null) {
+    if (Strings.isNullOrBlank(info.groupId)) {
+      info.groupId = mavenProject.groupId
+    }
+    if (Strings.isNullOrBlank(info.artifactId)) {
+      info.artifactId = mavenProject.artifactId
+    }
+    if (Strings.isNullOrBlank(info.extension)) {
+      info.extension = "pom";
+    }
+    if (Strings.isNullOrBlank(info.repositoryUrl)) {
+      info.repositoryUrl = ServiceConstants.MAVEN_CENTRAL
+    }
+  }
+}
+
+

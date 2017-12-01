@@ -20,14 +20,17 @@ import io.jenkins.functions.Argument;
 import io.jenkins.functions.Step;
 import org.jenkinsci.plugins.fabric8.CommandSupport;
 import org.jenkinsci.plugins.fabric8.Logger;
+import org.jenkinsci.plugins.fabric8.helpers.ConfigHelper;
 import org.jenkinsci.plugins.fabric8.model.ServiceConstants;
 import org.jenkinsci.plugins.fabric8.model.StagedProjectInfo;
+import org.jenkinsci.plugins.fabric8.model.WaitForArtifactInfo;
 import org.kohsuke.github.GHPullRequest;
 
 import javax.validation.constraints.NotEmpty;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 @Step(displayName = "Releases a staged release promoting artifacts and docker images and waiting until artifacts are synced to the central repository")
@@ -95,6 +98,17 @@ public class ReleaseProject extends CommandSupport implements Function<ReleasePr
         private String artifactExtensionToWaitFor = "";
         @Argument
         private String artifactIdToWaitFor = "";
+        @Argument
+        private boolean useGitTagForNextVersion;
+        @Argument
+        private boolean helmPush;
+
+
+        public static Arguments newInstance(Map<String,Object> map) {
+            Arguments answer = new Arguments();
+            ConfigHelper.populateBeanFromConfiguration(answer, map);
+            return answer;
+        }
 
         public Arguments() {
         }
@@ -130,6 +144,10 @@ public class ReleaseProject extends CommandSupport implements Function<ReleasePr
             return new PromoteArtifacts.Arguments(getProject(), getReleaseVersion(), getRepoIds());
         }
 
+        public WaitForArtifactInfo createWaitForArtifactInfo() {
+            return new WaitForArtifactInfo(repositoryToWaitFor, groupId, artifactIdToWaitFor, artifactExtensionToWaitFor);
+        }
+        
         /**
          * Return the arguments for invoking {@link PromoteImages} or null if there is not sufficient configuration
          * to promote images
@@ -288,6 +306,22 @@ public class ReleaseProject extends CommandSupport implements Function<ReleasePr
 
         public void setArtifactIdToWaitFor(String artifactIdToWaitFor) {
             this.artifactIdToWaitFor = artifactIdToWaitFor;
+        }
+
+        public boolean isUseGitTagForNextVersion() {
+            return useGitTagForNextVersion;
+        }
+
+        public void setUseGitTagForNextVersion(boolean useGitTagForNextVersion) {
+            this.useGitTagForNextVersion = useGitTagForNextVersion;
+        }
+
+        public boolean isHelmPush() {
+            return helmPush;
+        }
+
+        public void setHelmPush(boolean helmPush) {
+            this.helmPush = helmPush;
         }
     }
 }

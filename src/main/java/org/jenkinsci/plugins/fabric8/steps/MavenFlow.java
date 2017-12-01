@@ -23,6 +23,7 @@ import org.jenkinsci.plugins.fabric8.CommandSupport;
 import org.jenkinsci.plugins.fabric8.FailedBuildException;
 import org.jenkinsci.plugins.fabric8.Logger;
 import org.jenkinsci.plugins.fabric8.Utils;
+import org.jenkinsci.plugins.fabric8.helpers.ConfigHelper;
 import org.jenkinsci.plugins.fabric8.helpers.GitHelper;
 import org.jenkinsci.plugins.fabric8.helpers.GitRepositoryInfo;
 import org.jenkinsci.plugins.fabric8.helpers.MapHelpers;
@@ -202,15 +203,9 @@ public class MavenFlow extends CommandSupport implements Function<MavenFlow.Argu
         @Argument
         private String artifactIdToWaitFor = "";
 
-
-        // TODO we could code generate this method?
         public static Arguments newInstance(Map map) {
             Arguments arguments = new Arguments();
-            arguments.setCdOrganisation(MapHelpers.getString(map, "cdOrganisation", ""));
-            arguments.setCdBranches(MapHelpers.getList(map, "cdBranches"));
-            arguments.setPauseOnFailure(MapHelpers.getBool(map, "pauseOnFailure"));
-            arguments.setPauseOnSuccess(MapHelpers.getBool(map, "pauseOnSuccess"));
-            // TODO other properties...
+            ConfigHelper.populateBeanFromConfiguration(arguments, map);
             return arguments;
         }
 

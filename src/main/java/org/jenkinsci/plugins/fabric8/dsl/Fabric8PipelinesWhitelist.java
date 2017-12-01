@@ -31,11 +31,12 @@ import java.util.Set;
  */
 public class Fabric8PipelinesWhitelist extends Whitelist {
     private Set<String> validPackages = new HashSet<>(Arrays.asList(
+            "io.fabric8.utils",
+            "org.apache.maven.model",
             "org.jenkinsci.plugins.fabric8",
-            "org.jenkinsci.plugins.fabric8.model",
-            "org.jenkinsci.plugins.fabric8.steps",
             "org.jenkinsci.plugins.fabric8.helpers",
-            "io.fabric8.utils"
+            "org.jenkinsci.plugins.fabric8.model",
+            "org.jenkinsci.plugins.fabric8.steps"
     ));
 
     @Override

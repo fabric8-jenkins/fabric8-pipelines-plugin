@@ -1,5 +1,7 @@
 package dsl
 
+import org.jenkinsci.plugins.fabric8.model.WaitForArtifactInfo
+
 def call(body) {
   // evaluate the body block, and collect configuration into the object
   def config = [:]
@@ -9,13 +11,27 @@ def call(body) {
 
   def flow = new Fabric8Commands()
 
-  waitUntil {
-    retry(3) {
-      flow.isArtifactAvailableInRepo(config.repo, config.groupId.replaceAll('\\.', '/'), config.artifactId, config.version, config.ext)
-    }
-  }
+  // mandatory properties
+  def groupId = config.groupId
+  def artifactId = config.artifactId
+  def version = config.version
 
-  message = "${config.artifactId} ${config.version} released and available in maven central"
-  hubotSend message: message, failOnError: false
+  def repo = config.repositoryUrl ?: WaitForArtifactInfo.MAVEN_CENTRAL
+  def ext = config.ext ?: 'jar'
+
+  if (groupId && artifactId && version) {
+    echo "waiting for artifact ${groupId}/${artifactId}/${version}/${ext} to be in repo ${repo}"
+
+    waitUntil {
+      retry(3) {
+        flow.isArtifactAvailableInRepo(repo, groupId.replaceAll('\\.', '/'), artifactId, version, ext)
+      }
+    }
+
+    message = "${config.artifactId} ${config.version} released and available in maven central"
+    hubotSend message: message, failOnError: false
+  } else {
+    echo "required properties missing groupId: ${groupId}, artifactId: ${artifactId}, version: ${version}"
+  }
 
 }

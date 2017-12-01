@@ -28,6 +28,7 @@ public class MapHelpers {
     public static String getString(Map map, String key) {
         return getString(map, key, "");
     }
+
     public static String getString(Map map, String key, String defaultValue) {
         Object value = map.get(key);
         if (value != null) {

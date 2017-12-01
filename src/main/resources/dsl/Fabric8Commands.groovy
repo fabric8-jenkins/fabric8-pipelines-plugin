@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.client.KubernetesClient
 import io.fabric8.openshift.client.DefaultOpenShiftClient
 import io.fabric8.openshift.client.OpenShiftClient
 import jenkins.model.Jenkins
+import org.jenkinsci.plugins.fabric8.helpers.MavenHelpers
 
 import java.util.regex.Pattern
 
@@ -33,6 +34,15 @@ def getProjectVersion() {
   def project = new XmlSlurper().parseText(file)
   return project.version.text()
 }
+
+def loadMavenPom(String fileName = "pom.xml") {
+  if (fileExists(fileName)) {
+    def pomFileContent = readFile(fileName)
+    return MavenHelpers.loadMavenPom(pomFileContent)
+  }
+  return null
+}
+
 
 def getReleaseVersion(String artifact) {
   def modelMetaData = new XmlSlurper().parse("https://oss.sonatype.org/content/repositories/releases/${artifact}/maven-metadata.xml")
@@ -77,6 +87,7 @@ def isArtifactAvailableInRepo(String repo, String groupId, String artifactId, St
     connection.disconnect()
   }
 }
+
 
 def isFileAvailableInRepo(String repo, String path, String version, String artifact) {
   repo = removeTrailingSlash(repo)
