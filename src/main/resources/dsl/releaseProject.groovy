@@ -6,10 +6,8 @@ import org.jenkinsci.plugins.fabric8.model.ServiceConstants
 import org.jenkinsci.plugins.fabric8.model.WaitForArtifactInfo
 import org.jenkinsci.plugins.fabric8.steps.ReleaseProject
 
-def call(Map config = [:]) {
-  echo "releaseProject ${config}"
-
-  ReleaseProject.Arguments arguments = ReleaseProject.Arguments.newInstance(config)
+def call(ReleaseProject.Arguments arguments) {
+  echo "releaseProject ${arguments}"
 
   def flow = new Fabric8Commands()
   def project = arguments.project

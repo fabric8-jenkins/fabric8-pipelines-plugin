@@ -1,51 +1,30 @@
 package dsl
 
 import org.jenkinsci.plugins.fabric8.model.StagedProjectInfo
+import org.jenkinsci.plugins.fabric8.steps.StageProject
 
 
-def call(Map config = [:]) {
-  echo "stageProject ${config}"
+def call(StageProject.Arguments arguments) {
+  echo "stageProject ${arguments}"
 
-/*
-  StageProject.Arguments arguments = StageProject.Arguments.newInstance(config);
-  println "have arguments ${arguments}"
-*/
 
-  println "stageProject about to create Fabric8Commands"
-  def flow
-  try {
-    flow = new Fabric8Commands()
-  } catch (e) {
-    logError(e)
-  }
-  println "stageProject created flow ${flow}"
-
-  def project = config.project
+  def project = arguments.project
   if (!project) {
-    currentBuild.result = 'FAILURE'
     error "ERROR missing `project` property"
-    return false
   }
 
-  def extraStageImages = config.extraImagesToStage ?: []
-  def extraSetVersionArgs = config.setVersionExtraArgs ?: ""
-  def containerName = config.containerName ?: 'maven'
-  def clientsContainerName = config.clientsContainerName ?: 'clients'
-  def useMavenForNextVersion = config.useMavenForNextVersion ?: false
-  def repositoryUrl = config.repositoryUrl ?: null
-  def useStaging = config.useStaging ?: false
+  def flow = new Fabric8Commands()
+  def containerName = arguments.containerName
+  def clientsContainerName = arguments.clientsContainerName
+  def useMavenForNextVersion = arguments.useMavenForNextVersion
+  def useStaging = arguments.useStaging
+  def skipTests = arguments.skipTests
 
-  // stage to repo
-  println "about to try call setupStageWorkspace"
+  // TODO should we default these values from the pom.xml instead and only use the defaults if they are missing?
+  def nexusUrl = arguments.stageRepositoryUrl
+  def serverId = arguments.stageServerId
 
-  setupStageWorkspace(flow, useMavenForNextVersion, extraSetVersionArgs, containerName, clientsContainerName)
-
-  echo "called setupStageWorkspace"
-
-  // TODO determine the stage repo / id / whether to use staging... - maybe default to staging if sonatype or configured?
-  def nexusUrl = "https://oss.sonatype.org"
-  def serverId = "oss-sonatype-staging"
-  def skipTests = config.skipTests ?: false
+  setupStageWorkspace(flow, useMavenForNextVersion, arguments.extraSetVersionArgs, containerName, clientsContainerName)
 
   def repoIds = []
   if (useStaging) {
@@ -73,19 +52,19 @@ def call(Map config = [:]) {
     }
   }
   // TODO
-  //sh "git remote set-url origin git@github.com:${config.project}.git"
+  //sh "git remote set-url origin git@github.com:${project}.git"
 
   // lets avoide the stash / unstash for now as we're not using helm ATM
-  //stash excludes: '*/src/', includes: '**', name: "staged-${config.project}-${releaseVersion}".hashCode().toString()
+  //stash excludes: '*/src/', includes: '**', name: "staged-${project}-${releaseVersion}".hashCode().toString()
 
-  if (!config.useGitTagForNextVersion) {
+  if (arguments.useMavenForNextVersion) {
     container(clientsContainerName) {
       flow.updateGithub()
     }
   }
 
 /*
-  if (config.extraImagesToStage != null){
+  if (arguments.extraImagesToStage != null){
     stageExtraImages {
       images = extraStageImages
       tag = releaseVersion
@@ -183,16 +162,6 @@ String newVersionUsingSemVer(Fabric8Commands flow, String clientsContainerName) 
   }
 }
 
-
-def logError(Throwable t) {
-  println "ERROR: " + t.getMessage()
-  t.printStackTrace()
-}
-
-def logError(String message, Throwable t) {
-  println "ERROR: " + message + " " + t.getMessage()
-  t.printStackTrace()
-}
 
 def warning(String message) {
   println "WARNING: ${message}"

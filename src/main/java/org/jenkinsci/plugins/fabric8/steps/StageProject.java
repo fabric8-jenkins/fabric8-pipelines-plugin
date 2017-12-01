@@ -19,73 +19,24 @@ import io.jenkins.functions.Argument;
 import io.jenkins.functions.Step;
 import org.jenkinsci.plugins.fabric8.CommandSupport;
 import org.jenkinsci.plugins.fabric8.Fabric8Commands;
+import org.jenkinsci.plugins.fabric8.helpers.ConfigHelper;
 import org.jenkinsci.plugins.fabric8.model.StagedProjectInfo;
 
 import javax.validation.constraints.NotEmpty;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 @Step(displayName = "Stages a release of the maven project into a staging repository")
-public class StageProject extends CommandSupport implements Function<StageProject.Arguments, StagedProjectInfo> {
+public class StageProject extends CommandSupport{
     public StageProject() {
     }
 
     public StageProject(CommandSupport parentStep) {
         super(parentStep);
-    }
-
-    public StagedProjectInfo apply(String project) {
-        return apply(new Arguments(project));
-    }
-
-    @Override
-    @Step
-    public StagedProjectInfo apply(Arguments config) {
-        final Fabric8Commands flow = new Fabric8Commands(this);
-
-        final AtomicReference<List<String>> repoIdsRef = new AtomicReference<>();
-        final AtomicReference<String> releaseVersionRef = new AtomicReference<>();
-
-        final List<String> extraImagesToStage = config.getExtraImagesToStage();
-        final String containerName = config.getContainerName();
-        final String project = config.getProject();
-
-        container(containerName, () -> {
-            sh("chmod 600 /root/.ssh-git/ssh-key");
-            sh("chmod 600 /root/.ssh-git/ssh-key.pub");
-            sh("chmod 700 /root/.ssh-git");
-            sh("chmod 600 /home/jenkins/.gnupg/pubring.gpg");
-            sh("chmod 600 /home/jenkins/.gnupg/secring.gpg");
-            sh("chmod 600 /home/jenkins/.gnupg/trustdb.gpg");
-            sh("chmod 700 /home/jenkins/.gnupg");
-
-            sh("git remote set-url origin git@github.com:" + project + ".git");
-
-            String currentVersion = flow.getProjectVersion();
-
-            boolean useGitTagForNextVersion = config.isUseGitTagForNextVersion();
-            flow.setupWorkspaceForRelease(project, useGitTagForNextVersion, config.getExtraSetVersionArgs(), currentVersion);
-
-            repoIdsRef.set(flow.stageSonartypeRepo());
-            releaseVersionRef.set(flow.getProjectVersion());
-
-            // lets avoide the stash / unstash for now as we're not using helm ATM
-            //stash excludes: '*/src/', includes: '**', name: "staged-${config.project}-${releaseVersion}".hashCode().toString()
-
-            if (!useGitTagForNextVersion) {
-                return flow.updateGithub();
-            }
-            return null;
-        });
-
-        String releaseVersion = releaseVersionRef.get();
-        if (extraImagesToStage != null) {
-            new StageExtraImages(this).apply(releaseVersion, extraImagesToStage);
-        }
-        return new StagedProjectInfo(project, releaseVersion, repoIdsRef.get());
     }
 
     public static class Arguments implements Serializable {
@@ -95,13 +46,30 @@ public class StageProject extends CommandSupport implements Function<StageProjec
         @NotEmpty
         private String project = "";
         @Argument
-        private boolean useGitTagForNextVersion;
+        private boolean useMavenForNextVersion;
         @Argument
         private String extraSetVersionArgs = "";
         @Argument
         private List<String> extraImagesToStage = new ArrayList<>();
         @Argument
         private String containerName = "maven";
+        @Argument
+        private String clientsContainerName = "clients";
+        @Argument
+        private boolean useStaging;
+        @Argument
+        private String stageRepositoryUrl = "https://oss.sonatype.org";
+        @Argument
+        private String stageServerId = "oss-sonatype-staging";
+        @Argument
+        private boolean skipTests;
+
+
+        public static Arguments newInstance(Map<String,Object> map) {
+            Arguments answer = new Arguments();
+            ConfigHelper.populateBeanFromConfiguration(answer, map);
+            return answer;
+        }
 
         public Arguments() {
         }
@@ -110,12 +78,12 @@ public class StageProject extends CommandSupport implements Function<StageProjec
             this.project = project;
         }
 
-        public boolean isUseGitTagForNextVersion() {
-            return useGitTagForNextVersion;
+        public boolean isUseMavenForNextVersion() {
+            return useMavenForNextVersion;
         }
 
-        public void setUseGitTagForNextVersion(boolean useGitTagForNextVersion) {
-            this.useGitTagForNextVersion = useGitTagForNextVersion;
+        public void setUseMavenForNextVersion(boolean useMavenForNextVersion) {
+            this.useMavenForNextVersion = useMavenForNextVersion;
         }
 
         public String getExtraSetVersionArgs() {
@@ -148,6 +116,46 @@ public class StageProject extends CommandSupport implements Function<StageProjec
 
         public void setContainerName(String containerName) {
             this.containerName = containerName;
+        }
+
+        public String getClientsContainerName() {
+            return clientsContainerName;
+        }
+
+        public void setClientsContainerName(String clientsContainerName) {
+            this.clientsContainerName = clientsContainerName;
+        }
+
+        public boolean isUseStaging() {
+            return useStaging;
+        }
+
+        public void setUseStaging(boolean useStaging) {
+            this.useStaging = useStaging;
+        }
+
+        public boolean isSkipTests() {
+            return skipTests;
+        }
+
+        public void setSkipTests(boolean skipTests) {
+            this.skipTests = skipTests;
+        }
+
+        public String getStageRepositoryUrl() {
+            return stageRepositoryUrl;
+        }
+
+        public void setStageRepositoryUrl(String stageRepositoryUrl) {
+            this.stageRepositoryUrl = stageRepositoryUrl;
+        }
+
+        public String getStageServerId() {
+            return stageServerId;
+        }
+
+        public void setStageServerId(String stageServerId) {
+            this.stageServerId = stageServerId;
         }
     }
 }

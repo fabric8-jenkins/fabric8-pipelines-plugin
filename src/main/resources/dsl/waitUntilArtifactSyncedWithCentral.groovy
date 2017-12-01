@@ -1,6 +1,6 @@
 package dsl
 
-import org.jenkinsci.plugins.fabric8.model.WaitForArtifactInfo
+import org.jenkinsci.plugins.fabric8.model.ServiceConstants
 
 def call(body) {
   // evaluate the body block, and collect configuration into the object
@@ -16,7 +16,7 @@ def call(body) {
   def artifactId = config.artifactId
   def version = config.version
 
-  def repo = config.repositoryUrl ?: WaitForArtifactInfo.MAVEN_CENTRAL
+  def repo = config.repositoryUrl ?: ServiceConstants.MAVEN_CENTRAL
   def ext = config.ext ?: 'jar'
 
   if (groupId && artifactId && version) {

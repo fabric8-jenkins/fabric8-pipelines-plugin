@@ -21,7 +21,14 @@ package org.jenkinsci.plugins.fabric8.model;
 public class ServiceConstants {
     public static final String FABRIC8_DOCKER_REGISTRY = "fabric8-docker-registry";
     public static final String FABRIC8_DOCKER_REGISTRY_PORT = "80";
+
     public static final String MAVEN_CENTRAL = "http://central.maven.org/maven2/";
+    public static final String ARTIFACT_REPOSITORY_RELEASE_URL = "http://artifact-repository/content/repositories/staging/";
+
     public static final String JENKINS_ARCHIVE_REPO = "http://archives.jenkins-ci.org/";
 
+    public static final String SONATYPE_REPOSITORY_URL = "https://oss.sonatype.org";
+
+    public static final String SONATYPE_STAGING_SERVER_ID = "oss-sonatype-staging";
+    public static final String SONATYPE_SERVER_ID = "oss-sonatype";
 }

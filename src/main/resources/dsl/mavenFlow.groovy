@@ -8,6 +8,8 @@ import org.jenkinsci.plugins.fabric8.helpers.GitHelper
 import org.jenkinsci.plugins.fabric8.helpers.GitRepositoryInfo
 import org.jenkinsci.plugins.fabric8.model.StagedProjectInfo
 import org.jenkinsci.plugins.fabric8.steps.MavenFlow
+import org.jenkinsci.plugins.fabric8.steps.ReleaseProject
+import org.jenkinsci.plugins.fabric8.steps.StageProject
 
 def call(Map config = [:]) {
   echo "mavenFlow ${config}"
@@ -16,32 +18,20 @@ def call(Map config = [:]) {
   def pauseOnFailure = config.get('pauseOnFailure', false)
   def pauseOnSuccess = config.get('pauseOnSuccess', false)
 
-/*
-  def organisationName = "fabric8io"
-  def repoName = '${organisationName}/fabric8-platform'
-  def groupId = 'io.fabric8.platform.distro'
-*/
-
   try {
     checkout scm
 
     utils = createUtils()
     def branch = findBranch()
-    println "setting branch"
     utils.setBranch(branch)
 
-    println "Creating arguments"
     MavenFlow.Arguments arguments = MavenFlow.Arguments.newInstance(config);
-    println "have arguments ${arguments}"
 
-    println "current gitCloneUrl = ${arguments.gitCloneUrl}"
     if (!arguments.gitCloneUrl) {
-      println "Loading gitCloneUrl"
       arguments.gitCloneUrl = doFindGitCloneURL()
       println "gitCloneUrl now is ${arguments.gitCloneUrl}"
     }
 
-    println "testing CI / CD branch"
     if (isCi(arguments)) {
       ciPipeline(arguments);
     } else if (isCD(arguments)) {
@@ -103,7 +93,7 @@ boolean isCD(MavenFlow.Arguments arguments) {
   }
   String organisation = arguments.getCdOrganisation();
   List<String> cdBranches = arguments.getCdBranches();
-  println("invoked with organisation " + organisation + " branches " + cdBranches);
+  //println("invoked with organisation " + organisation + " branches " + cdBranches);
   if (cdBranches != null && cdBranches.size() > 0 && Strings.notEmpty(organisation)) {
     def branch = utils.getBranch()
     if (cdBranches.contains(branch)) {
@@ -173,13 +163,13 @@ Boolean cdPipeline(MavenFlow.Arguments arguments) {
       sh("git remote set-url origin " + remoteGitCloneUrl);
     }
   }
-  println "Staging project"
+  StageProject.Arguments stageProjectArguments = arguments.createStageProjectArguments(repositoryInfo)
+  StagedProjectInfo stagedProjectInfo = stageProject(stageProjectArguments)
 
-  StagedProjectInfo result = stageProject(project: repositoryInfo.project)
+  println "Staging stagedProjectInfo = ${stagedProjectInfo}"
 
-  println "Staging result = ${result}"
-
-  return releaseProject(project: result.project, releaseVersion: result.releaseVersion, repoIds: result.repoIds)
+  ReleaseProject.Arguments releaseProjectArguments = arguments.createReleaseProjectArguments(stagedProjectInfo)
+  return releaseProject(releaseProjectArguments)
 }
 
 String remoteGitCloneUrl(GitRepositoryInfo info) {
@@ -194,7 +184,6 @@ String doFindGitCloneURL() {
   if (Strings.isNullOrBlank(text)) {
     text = readFile(".git/config");
   }
-  println("\nfindGitCloneURL() text: " + text);
   if (Strings.notEmpty(text)) {
     return GitHelper.extractGitUrl(text);
   }

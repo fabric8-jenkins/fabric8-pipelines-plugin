@@ -20,13 +20,10 @@ import io.fabric8.utils.Strings;
 import io.jenkins.functions.Argument;
 import io.jenkins.functions.Step;
 import org.jenkinsci.plugins.fabric8.CommandSupport;
-import org.jenkinsci.plugins.fabric8.FailedBuildException;
-import org.jenkinsci.plugins.fabric8.Logger;
 import org.jenkinsci.plugins.fabric8.Utils;
 import org.jenkinsci.plugins.fabric8.helpers.ConfigHelper;
 import org.jenkinsci.plugins.fabric8.helpers.GitHelper;
 import org.jenkinsci.plugins.fabric8.helpers.GitRepositoryInfo;
-import org.jenkinsci.plugins.fabric8.helpers.MapHelpers;
 import org.jenkinsci.plugins.fabric8.model.ServiceConstants;
 import org.jenkinsci.plugins.fabric8.model.StagedProjectInfo;
 
@@ -145,6 +142,7 @@ public class MavenFlow extends CommandSupport implements Function<MavenFlow.Argu
      * Implements the CD pipeline
      */
     public Boolean cdPipeline(Arguments arguments) {
+/*
         echo("Performing CD pipeline");
         String gitCloneUrl = arguments.getGitCloneUrl();
         if (Strings.isNullOrBlank(gitCloneUrl)) {
@@ -153,11 +151,13 @@ public class MavenFlow extends CommandSupport implements Function<MavenFlow.Argu
         }
         GitRepositoryInfo repositoryInfo = GitHelper.parseGitRepositoryInfo(gitCloneUrl);
         sh("git remote set-url " + gitCloneUrl);
-        StageProject.Arguments stageProjectArguments = arguments.createStageProjectArguments(getLogger(), repositoryInfo);
+        StageProject.Arguments stageProjectArguments = arguments.createStageProjectArguments(repositoryInfo);
         StagedProjectInfo stagedProject = new StageProject(this).apply(stageProjectArguments);
 
-        ReleaseProject.Arguments releaseProjectArguments = arguments.createReleaseProjectArguments(getLogger(), stagedProject);
+        ReleaseProject.Arguments releaseProjectArguments = arguments.createReleaseProjectArguments(stagedProject);
         return new ReleaseProject(this).apply(releaseProjectArguments);
+*/
+        return false;
     }
 
     public static class Arguments implements Serializable {
@@ -178,13 +178,25 @@ public class MavenFlow extends CommandSupport implements Function<MavenFlow.Argu
         private boolean pauseOnSuccess = false;
 
         @Argument
-        private boolean useGitTagForNextVersion = false;
+        private boolean useMavenForNextVersion = false;
         @Argument
         private String extraSetVersionArgs = "";
         @Argument
         private List<String> extraImagesToStage = new ArrayList<>();
         @Argument
         private String containerName = "maven";
+        @Argument
+        private String clientsContainerName = "clients";
+        @Argument
+        private boolean useStaging;
+        @Argument
+        private String stageRepositoryUrl = "";
+        @Argument
+        private String stageServerId = "";
+        @Argument
+        private boolean skipTests;
+        @Argument
+        private boolean useSonatype;
 
         @Argument
         private String dockerOrganisation = "";
@@ -195,7 +207,7 @@ public class MavenFlow extends CommandSupport implements Function<MavenFlow.Argu
         @Argument
         private List<String> extraImagesToTag = new ArrayList<>();
         @Argument
-        private String repositoryToWaitFor = ServiceConstants.MAVEN_CENTRAL;
+        private String repositoryToWaitFor;
         @Argument
         private String groupId = "";
         @Argument
@@ -203,6 +215,7 @@ public class MavenFlow extends CommandSupport implements Function<MavenFlow.Argu
         @Argument
         private String artifactIdToWaitFor = "";
 
+        
         public static Arguments newInstance(Map map) {
             Arguments arguments = new Arguments();
             ConfigHelper.populateBeanFromConfiguration(arguments, map);
@@ -217,18 +230,41 @@ public class MavenFlow extends CommandSupport implements Function<MavenFlow.Argu
             this.gitCloneUrl = gitCloneUrl;
         }
 
-        public StageProject.Arguments createStageProjectArguments(Logger logger, GitRepositoryInfo repositoryInfo) {
+        public StageProject.Arguments createStageProjectArguments(GitRepositoryInfo repositoryInfo) {
             StageProject.Arguments answer = new StageProject.Arguments(repositoryInfo.getProject());
-            answer.setUseGitTagForNextVersion(useGitTagForNextVersion);
+            if (useSonatype) {
+                if (Strings.isNullOrBlank(stageRepositoryUrl)) {
+                    stageRepositoryUrl = ServiceConstants.SONATYPE_REPOSITORY_URL;
+                }
+                if (Strings.isNullOrBlank(stageServerId)) {
+                    stageServerId = useStaging ? ServiceConstants.SONATYPE_STAGING_SERVER_ID : ServiceConstants.SONATYPE_SERVER_ID;
+                }
+            }
+            if (Strings.isNullOrBlank(repositoryToWaitFor)) {
+                if (useSonatype) {
+                    repositoryToWaitFor = ServiceConstants.MAVEN_CENTRAL;
+                } else {
+                    repositoryToWaitFor = ServiceConstants.ARTIFACT_REPOSITORY_RELEASE_URL;
+                }
+            }
+
+            answer.setUseMavenForNextVersion(useMavenForNextVersion);
             answer.setExtraSetVersionArgs(extraSetVersionArgs);
             answer.setExtraImagesToStage(extraImagesToStage);
+            answer.setUseStaging(useStaging);
+            answer.setStageRepositoryUrl(stageRepositoryUrl);
+            answer.setStageServerId(stageServerId);
+            answer.setSkipTests(skipTests);
             if (Strings.notEmpty(containerName)) {
                 answer.setContainerName(containerName);
+            }
+            if (Strings.notEmpty(clientsContainerName)) {
+                answer.setClientsContainerName(clientsContainerName);
             }
             return answer;
         }
 
-        public ReleaseProject.Arguments createReleaseProjectArguments(Logger logger, StagedProjectInfo stagedProject) {
+        public ReleaseProject.Arguments createReleaseProjectArguments(StagedProjectInfo stagedProject) {
             ReleaseProject.Arguments answer = new ReleaseProject.Arguments(stagedProject);
             if (Strings.notEmpty(containerName)) {
                 answer.setContainerName(containerName);
@@ -242,14 +278,6 @@ public class MavenFlow extends CommandSupport implements Function<MavenFlow.Argu
             answer.setPromoteToDockerRegistry(getPromoteToDockerRegistry());
             answer.setRepositoryToWaitFor(getRepositoryToWaitFor());
             return answer;
-        }
-
-        public boolean isUseGitTagForNextVersion() {
-            return useGitTagForNextVersion;
-        }
-
-        public void setUseGitTagForNextVersion(boolean useGitTagForNextVersion) {
-            this.useGitTagForNextVersion = useGitTagForNextVersion;
         }
 
         public String getExtraSetVersionArgs() {
@@ -370,6 +398,62 @@ public class MavenFlow extends CommandSupport implements Function<MavenFlow.Argu
 
         public void setCdBranches(List<String> cdBranches) {
             this.cdBranches = cdBranches;
+        }
+
+        public boolean isUseMavenForNextVersion() {
+            return useMavenForNextVersion;
+        }
+
+        public void setUseMavenForNextVersion(boolean useMavenForNextVersion) {
+            this.useMavenForNextVersion = useMavenForNextVersion;
+        }
+
+        public String getClientsContainerName() {
+            return clientsContainerName;
+        }
+
+        public void setClientsContainerName(String clientsContainerName) {
+            this.clientsContainerName = clientsContainerName;
+        }
+
+        public boolean isUseStaging() {
+            return useStaging;
+        }
+
+        public void setUseStaging(boolean useStaging) {
+            this.useStaging = useStaging;
+        }
+
+        public String getStageRepositoryUrl() {
+            return stageRepositoryUrl;
+        }
+
+        public void setStageRepositoryUrl(String stageRepositoryUrl) {
+            this.stageRepositoryUrl = stageRepositoryUrl;
+        }
+
+        public String getStageServerId() {
+            return stageServerId;
+        }
+
+        public void setStageServerId(String stageServerId) {
+            this.stageServerId = stageServerId;
+        }
+
+        public boolean isSkipTests() {
+            return skipTests;
+        }
+
+        public void setSkipTests(boolean skipTests) {
+            this.skipTests = skipTests;
+        }
+
+        public boolean isUseSonatype() {
+            return useSonatype;
+        }
+
+        public void setUseSonatype(boolean useSonatype) {
+            this.useSonatype = useSonatype;
         }
     }
 }
