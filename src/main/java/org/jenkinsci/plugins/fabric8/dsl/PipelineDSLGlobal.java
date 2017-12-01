@@ -54,6 +54,9 @@ public abstract class PipelineDSLGlobal extends GlobalVariable {
                 "method org.jenkinsci.plugins.fabric8.helpers.GitRepositoryInfo *",
                 "method org.jenkinsci.plugins.fabric8.helpers.GitRepositoryInfo * *",
 
+                // boolean utils
+                "method java.lang.Boolean booleanValue",
+
                 // string utils
                 "staticMethod io.fabric8.utils.Strings isNotBlank java.lang.String",
                 "staticMethod io.fabric8.utils.Strings isNullOrBlank java.lang.String",

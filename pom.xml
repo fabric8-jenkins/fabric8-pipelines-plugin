@@ -438,6 +438,8 @@
             <sshKeyName>${sshKeyName}</sshKeyName>
             <gpgDir>${gpgDir}</gpgDir>
 
+            <testGitUrl>${testGitUrl}</testGitUrl>
+            <testGitBranch>${testGitBranch}</testGitBranch>
           </systemPropertyVariables>
         </configuration>
       </plugin>
@@ -474,6 +476,8 @@
             <sshKeyName>${sshKeyName}</sshKeyName>
             <gpgDir>${gpgDir}</gpgDir>
 
+            <testGitUrl>${testGitUrl}</testGitUrl>
+            <testGitBranch>${testGitBranch}</testGitBranch>
           </systemProperties>
         </configuration>
       </plugin>
