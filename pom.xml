@@ -99,6 +99,8 @@
     <!--
         <workflow-aggregator.version>2.5</workflow-aggregator.version>
     -->
+    <workflow-scm-step.version>2.6</workflow-scm-step.version>
+
     <!--
         <jenkins.version>1.609.3</jenkins.version>
         <workflow.version>1.13</workflow.version>
@@ -111,6 +113,8 @@
     <!-- TODO temporary skip of findbugs -->
     <findbugs.skip>true</findbugs.skip>
 
+
+    <!-- TODO these old versions are to match the kubernetes plugin -->
 <!--
     <fabric8.version>3.0.8</fabric8.version>
 -->
@@ -120,7 +124,7 @@
 -->
     <kubernetes-client.version>2.6.3</kubernetes-client.version>
 
-    <workflow-scm-step.version>2.6</workflow-scm-step.version>
+    <kubernetes-plugin.version>1.2-SNAPSHOT</kubernetes-plugin.version>
   </properties>
 
   <developers>
@@ -374,10 +378,7 @@
     <dependency>
       <groupId>org.csanchez.jenkins.plugins</groupId>
       <artifactId>kubernetes</artifactId>
-      <version>1.2-SNAPSHOT</version>
-<!--
-      <version>1.1</version>
--->
+      <version>${kubernetes-plugin.version}</version>
       <scope>test</scope>
     </dependency>
 
@@ -543,6 +544,14 @@
           </plugin>
         </plugins>
       </build>
+    </profile>
+
+    <profile>
+      <id>release</id>
+      <properties>
+        <!-- TODO to avoid enforcer errors with the current snapshot deploy - remove once 1.2.x is released! -->
+        <kubernetes-plugin.version>1.1</kubernetes-plugin.version>
+      </properties>
     </profile>
   </profiles>
 </project>
