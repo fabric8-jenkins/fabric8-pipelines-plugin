@@ -29,10 +29,10 @@ def call(StageProject.Arguments arguments) {
   def repoIds = []
   if (useStaging) {
     echo "using staging to the repository: ${serverId} at ${nexusUrl}"
-    repoIds = stageSonartypeRepo(flow, serverId, nexusUrl)
+    repoIds = stageSonartypeRepo(flow, serverId, nexusUrl, containerName)
   } else {
     echo "deploying to local artifact-repository"
-    mavenDeploy(skipTests)
+    mavenDeploy(skipTests, containerName)
   }
 
   def releaseVersion = flow.getProjectVersion()
@@ -76,7 +76,7 @@ def call(StageProject.Arguments arguments) {
 }
 
 
-def stageSonartypeRepo(Fabric8Commands flow, String serverId, String nexusUrl) {
+def stageSonartypeRepo(Fabric8Commands flow, String serverId, String nexusUrl, String containerName) {
   try {
     def registryHost = env.FABRIC8_DOCKER_REGISTRY_SERVICE_HOST
     if (!registryHost) {
@@ -90,8 +90,17 @@ def stageSonartypeRepo(Fabric8Commands flow, String serverId, String nexusUrl) {
 
     echo "using docker registry: ${registryHost}"
 
-    sh "mvn clean -B"
-    sh "mvn -V -B -e -U install org.sonatype.plugins:nexus-staging-maven-plugin:1.6.7:deploy -P release -P openshift -DnexusUrl=https://oss.sonatype.org -DserverId=oss-sonatype-staging -Ddocker.push.registry=${registryHost}"
+    String mvnArgs = ""
+    if (serverId) {
+      mvnArgs += " -DserverId=${serverId}"
+    }
+    if (nexusUrl) {
+      mvnArgs += " -DnexusUrl=${nexusUrl}"
+    }
+    container(containerName) {
+      sh "mvn clean -B"
+      sh "mvn -V -B -e -U install org.sonatype.plugins:nexus-staging-maven-plugin:1.6.7:deploy -P release -P openshift ${mvnArgs} -Ddocker.push.registry=${registryHost}"
+    }
 
     // lets not archive artifacts until we if we just use nexus or a content repo
     //step([$class: 'ArtifactArchiver', artifacts: '**/target/*.jar', fingerprint: true])
@@ -105,8 +114,10 @@ def stageSonartypeRepo(Fabric8Commands flow, String serverId, String nexusUrl) {
   return flow.getRepoIds()
 }
 
-def mavenDeploy(skipTests) {
-  sh "mvn clean -B -e -U deploy -Dmaven.test.skip=${skipTests} -P openshift,artifact-repository"
+def mavenDeploy(skipTests, String containerName) {
+  container(containerName) {
+    sh "mvn clean -B -e -U deploy -Dmaven.test.skip=${skipTests} -P openshift,artifact-repository"
+  }
 }
 
 def setupStageWorkspace(Fabric8Commands flow, boolean useMavenForNextVersion, String mvnExtraArgs, String containerName, String clientsContainerName) {
