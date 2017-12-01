@@ -88,7 +88,7 @@ def stageSonartypeRepo(Fabric8Commands flow, String serverId, String nexusUrl, S
       registryHost = "${registryHost}:${registryPort}"
     }
 
-    echo "using docker registry: ${registryHost}"
+    echo "using docker registry: ${registryHost}, serverId: ${serverId}, nexusUrl: ${nexusUrl} and container: ${containerName}"
 
     String mvnArgs = ""
     if (serverId) {
