@@ -32,7 +32,7 @@
 -->
   <groupId>io.fabric8.jenkins.pipelines</groupId>
   <artifactId>fabric8-pipelines</artifactId>
-  <version>0.3-SNAPSHOT</version>
+  <version>0.3.6</version>
   <packaging>hpi</packaging>
 
   <name>Plugin for Fabric8 Pipelines</name>
