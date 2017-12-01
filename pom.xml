@@ -562,6 +562,9 @@
               <excludes>
                 <!-- lets exclude this CI test when releasing -->
                 <exclude>**/KubernetesMavenFlowDSLTest.*</exclude>
+
+                <!-- we cannot handle the new hubot steps dependencies yet -->
+                <exclude>**/InjectedTest.*</exclude>
               </excludes>
             </configuration>
           </plugin>
