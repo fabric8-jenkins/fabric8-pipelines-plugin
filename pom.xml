@@ -27,7 +27,10 @@
     <relativePath/>
   </parent>
 
+<!--
   <groupId>org.jenkins-ci.plugins</groupId>
+-->
+  <groupId>io.fabric8.jenkins.pipelines</groupId>
   <artifactId>fabric8-pipelines</artifactId>
   <version>0.3-SNAPSHOT</version>
   <packaging>hpi</packaging>
