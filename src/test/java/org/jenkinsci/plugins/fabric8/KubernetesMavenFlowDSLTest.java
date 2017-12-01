@@ -15,20 +15,14 @@
  */
 package org.jenkinsci.plugins.fabric8;
 
+import io.fabric8.utils.Strings;
 import jenkins.plugins.git.GitStep;
 import org.jenkinsci.plugins.fabric8.helpers.BooleanHelpers;
-import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.cps.CpsScmFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
-import org.jenkinsci.plugins.workflow.steps.scm.GitSampleRepoRule;
-import org.junit.ClassRule;
 import org.junit.Ignore;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runners.model.Statement;
-import org.jvnet.hudson.test.BuildWatcher;
-import org.jvnet.hudson.test.RestartableJenkinsRule;
 
 import static org.junit.Assert.assertNotNull;
 
@@ -41,22 +35,30 @@ public class KubernetesMavenFlowDSLTest extends AbstractKubernetesPipelineTest {
 
     @Ignore
     public void sampleRepoCIBuild() throws Exception {
-        assertBuildSuccess("scripted");
+        String gitUrl = "https://github.com/jstrachan/test-maven-flow-project.git";
+        assertBuildSuccess(gitUrl, "scripted");
     }
 
     @Test
     public void sampleRepoCDBuild() throws Exception {
-        String branchName = "pod-template-by-name";
-        if (BooleanHelpers.asBoolean(System.getProperty("pausePipeline"))) {
+        String defaultBranch = "pod-template-by-name";
+        String gitUrl = System.getProperty("testGitUrl");
+        String branchName = System.getProperty("testGitBranch");
+        if (Strings.isNullOrBlank(gitUrl)) {
+            gitUrl = "https://github.com/jstrachan/test-maven-flow-project.git";
+        }
+        if (Strings.isNullOrBlank(branchName)) {
+            branchName = defaultBranch;
+        }
+        if (branchName.equals(defaultBranch) && BooleanHelpers.asBoolean(System.getProperty("pausePipeline"))) {
             branchName += "-pause";
         }
-        assertBuildSuccess(branchName);
+        assertBuildSuccess(gitUrl, branchName);
     }
 
-    public void assertBuildSuccess(String branchName) throws Exception {
-        String gitUrl = "https://github.com/jstrachan/test-maven-flow-project.git";
+    public void assertBuildSuccess(String gitUrl, String branchName) throws Exception {
         System.out.println("Testing repo " + gitUrl + " branch " + branchName);
-        
+
         WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "test-" + branchName);
 
         GitStep gitStep = new GitStep(gitUrl);

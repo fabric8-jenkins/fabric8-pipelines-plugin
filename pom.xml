@@ -60,6 +60,10 @@
     -->
     <connectorHost>192.168.64.1</connectorHost>
     <port>9090</port>
+
+    <testGitUrl></testGitUrl>
+    <testGitBranch></testGitBranch>
+    
     <nodeProvisionMargin>50</nodeProvisionMargin>
     <nodeProvisionMargin0>0.85</nodeProvisionMargin0>
     <pausePipeline></pausePipeline>
@@ -487,6 +491,16 @@
         <connectorHost>0.0.0.0</connectorHost>
       </properties>
     </profile>
+
+    <!-- lets use the main unit test to dogfood a CD release of our own repo -->
+    <profile>
+      <id>dogfood-cd</id>
+      <properties>
+        <testGitUrl>https://github.com/fabric8-jenkins/fabric8-pipelines-plugin</testGitUrl>
+        <testGitBranch>master</testGitBranch>
+      </properties>
+    </profile>
+
     <profile>
       <id>license</id>
       <build>
