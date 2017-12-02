@@ -1,5 +1,6 @@
 package dsl
 
+import org.jenkinsci.plugins.fabric8.helpers.MavenHelpers
 import org.jenkinsci.plugins.fabric8.model.StagedProjectInfo
 import org.jenkinsci.plugins.fabric8.steps.StageProject
 
@@ -19,20 +20,22 @@ def call(StageProject.Arguments arguments) {
   def useMavenForNextVersion = arguments.useMavenForNextVersion
   def useStaging = arguments.useStaging
   def skipTests = arguments.skipTests
+  def gitPush = !arguments.disableGitPush
+  def mavenProfiles = arguments.mavenProfiles
 
   // TODO should we default these values from the pom.xml instead and only use the defaults if they are missing?
   def nexusUrl = arguments.stageRepositoryUrl
   def serverId = arguments.stageServerId
 
-  setupStageWorkspace(flow, useMavenForNextVersion, arguments.extraSetVersionArgs, containerName, clientsContainerName)
+  setupStageWorkspace(flow, useMavenForNextVersion, arguments.extraSetVersionArgs, containerName, clientsContainerName, gitPush)
 
   def repoIds = []
   if (useStaging) {
     echo "using staging to the repository: ${serverId} at ${nexusUrl}"
-    repoIds = stageSonartypeRepo(flow, serverId, nexusUrl, containerName)
+    repoIds = stageSonartypeRepo(flow, serverId, nexusUrl, containerName, mavenProfiles)
   } else {
     echo "deploying to local artifact-repository"
-    mavenDeploy(skipTests, containerName)
+    mavenDeploy(skipTests, containerName, mavenProfiles)
   }
 
   def releaseVersion = flow.getProjectVersion()
@@ -57,7 +60,7 @@ def call(StageProject.Arguments arguments) {
   // lets avoide the stash / unstash for now as we're not using helm ATM
   //stash excludes: '*/src/', includes: '**', name: "staged-${project}-${releaseVersion}".hashCode().toString()
 
-  if (arguments.useMavenForNextVersion) {
+  if (gitPush && arguments.useMavenForNextVersion) {
     container(clientsContainerName) {
       flow.updateGithub()
     }
@@ -76,11 +79,13 @@ def call(StageProject.Arguments arguments) {
 }
 
 
-def stageSonartypeRepo(Fabric8Commands flow, String serverId, String nexusUrl, String containerName) {
+def stageSonartypeRepo(Fabric8Commands flow, String serverId, String nexusUrl, String containerName, List<String> mavenProfiles) {
   try {
     def registryHost = flow.dockerRegistryHostAndPort()
 
     registryHost = "http://${registryHost}"
+
+    def mvnProfileArg = MavenHelpers.mavenProfileCliArgument(mavenProfiles, "release", "openshift")
 
     echo "using docker registry: ${registryHost}, serverId: ${serverId}, nexusUrl: ${nexusUrl} and container: ${containerName}"
 
@@ -93,7 +98,7 @@ def stageSonartypeRepo(Fabric8Commands flow, String serverId, String nexusUrl, S
     }
     container(containerName) {
       sh "mvn clean -B"
-      sh "mvn -V -B -e -U install org.sonatype.plugins:nexus-staging-maven-plugin:1.6.7:deploy -P release -P openshift ${mvnArgs} -Ddocker.push.registry=${registryHost}"
+      sh "mvn -V -B -e -U install org.sonatype.plugins:nexus-staging-maven-plugin:1.6.7:deploy ${mvnProfileArg} ${mvnArgs} -Ddocker.push.registry=${registryHost}"
     }
 
     // lets not archive artifacts until we if we just use nexus or a content repo
@@ -108,13 +113,15 @@ def stageSonartypeRepo(Fabric8Commands flow, String serverId, String nexusUrl, S
   return flow.getRepoIds()
 }
 
-def mavenDeploy(skipTests, String containerName) {
+def mavenDeploy(skipTests, String containerName, List<String> mavenProfiles) {
+  def mvnProfileArg = MavenHelpers.mavenProfileCliArgument(mavenProfiles, "release", "openshift", "artifact-repository")
+
   container(containerName) {
-    sh "mvn clean -B -e -U deploy -Dmaven.test.skip=${skipTests} -P openshift,artifact-repository"
+    sh "mvn clean -B -e -U deploy -Dmaven.test.skip=${skipTests} ${mvnProfileArg}"
   }
 }
 
-def setupStageWorkspace(Fabric8Commands flow, boolean useMavenForNextVersion, String mvnExtraArgs, String containerName, String clientsContainerName) {
+def setupStageWorkspace(Fabric8Commands flow, boolean useMavenForNextVersion, String mvnExtraArgs, String containerName, String clientsContainerName, boolean gitPush) {
   container(clientsContainerName) {
     sh "git config user.email fabric8-admin@googlegroups.com"
     sh "git config user.name fabric8-release"
@@ -145,7 +152,9 @@ def setupStageWorkspace(Fabric8Commands flow, boolean useMavenForNextVersion, St
       }
 
       sh "git commit -a -m 'release ${newVersion}'"
-      flow.pushTag(newVersion)
+      if (gitPush) {
+        flow.pushTag(newVersion)
+      }
     }
 
     def releaseVersion = flow.getProjectVersion()

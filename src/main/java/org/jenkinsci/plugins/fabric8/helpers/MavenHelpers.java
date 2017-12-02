@@ -23,6 +23,8 @@ import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  */
@@ -33,5 +35,19 @@ public class MavenHelpers {
         } else {
             return null;
         }
+    }
+
+    /**
+     * Returns the maven profile CLI argument for the given configured list of profile names or uses the given default profiles
+     * if no profiles are explicitly configured
+     */
+    public static String mavenProfileCliArgument(List<String> configuredProfiles, String... defaultProfiles) {
+        if (configuredProfiles == null || configuredProfiles.isEmpty()) {
+            configuredProfiles = Arrays.asList(defaultProfiles);
+        }
+        if (configuredProfiles.isEmpty()) {
+            return "";
+        }
+        return " -P " + String.join(",", configuredProfiles);
     }
 }

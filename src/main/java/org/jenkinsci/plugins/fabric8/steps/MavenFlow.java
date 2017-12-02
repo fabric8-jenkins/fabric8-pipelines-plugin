@@ -171,6 +171,8 @@ public class MavenFlow extends CommandSupport implements Function<MavenFlow.Argu
         private String cdOrganisation = "";
         @Argument
         private List<String> cdBranches = new ArrayList<>();
+        @Argument
+        private boolean disableGitPush = false;
 
         @Argument
         private boolean pauseOnFailure = false;
@@ -217,6 +219,8 @@ public class MavenFlow extends CommandSupport implements Function<MavenFlow.Argu
         private String artifactExtensionToWaitFor = "";
         @Argument
         private String artifactIdToWaitFor = "";
+        @Argument
+        private List<String> mavenProfiles = new ArrayList<>();
 
         
         public static Arguments newInstance(Map map) {
@@ -258,6 +262,8 @@ public class MavenFlow extends CommandSupport implements Function<MavenFlow.Argu
             answer.setStageRepositoryUrl(stageRepositoryUrl);
             answer.setStageServerId(stageServerId);
             answer.setSkipTests(skipTests);
+            answer.setDisableGitPush(disableGitPush);
+            answer.setMavenProfiles(mavenProfiles);
             if (Strings.notEmpty(containerName)) {
                 answer.setContainerName(containerName);
             }
@@ -470,6 +476,22 @@ public class MavenFlow extends CommandSupport implements Function<MavenFlow.Argu
 
         public void setUpdateNextDevelopmentVersion(boolean updateNextDevelopmentVersion) {
             this.updateNextDevelopmentVersion = updateNextDevelopmentVersion;
+        }
+
+        public boolean isDisableGitPush() {
+            return disableGitPush;
+        }
+
+        public void setDisableGitPush(boolean disableGitPush) {
+            this.disableGitPush = disableGitPush;
+        }
+
+        public List<String> getMavenProfiles() {
+            return mavenProfiles;
+        }
+
+        public void setMavenProfiles(List<String> mavenProfiles) {
+            this.mavenProfiles = mavenProfiles;
         }
     }
 }

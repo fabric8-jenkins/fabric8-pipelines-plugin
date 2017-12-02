@@ -190,6 +190,10 @@ public class AbstractKubernetesPipelineTest {
 
         createOrReplaceSecret(client, JENKINS_MAVEN_SETTINGS, ImmutableMap.of("settings.xml", testClassesFileContent("maven-settings.xml")));
         createOrReplaceSecret(client, JENKINS_DOCKER_CFG, ImmutableMap.of("docker-config.json", testClassesFileContent("docker-config.json")));
+
+        if (client.secrets().withName(JENKINS_RELEASE_GPG).get() == null) {
+            createOrReplaceSecret(client, JENKINS_RELEASE_GPG, ImmutableMap.of());
+        }
 /*
         File gpgDir;
         String gpgPath = System.getProperty("gpgDir");

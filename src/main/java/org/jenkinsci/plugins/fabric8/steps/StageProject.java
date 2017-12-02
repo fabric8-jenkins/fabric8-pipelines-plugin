@@ -63,6 +63,10 @@ public class StageProject extends CommandSupport{
         private String stageServerId = "oss-sonatype-staging";
         @Argument
         private boolean skipTests;
+        @Argument
+        private boolean disableGitPush = false;
+        @Argument
+        private List<String> mavenProfiles = new ArrayList<>();
 
 
         public static Arguments newInstance(Map<String,Object> map) {
@@ -156,6 +160,22 @@ public class StageProject extends CommandSupport{
 
         public void setStageServerId(String stageServerId) {
             this.stageServerId = stageServerId;
+        }
+
+        public boolean isDisableGitPush() {
+            return disableGitPush;
+        }
+
+        public void setDisableGitPush(boolean disableGitPush) {
+            this.disableGitPush = disableGitPush;
+        }
+
+        public List<String> getMavenProfiles() {
+            return mavenProfiles;
+        }
+
+        public void setMavenProfiles(List<String> mavenProfiles) {
+            this.mavenProfiles = mavenProfiles;
         }
     }
 }

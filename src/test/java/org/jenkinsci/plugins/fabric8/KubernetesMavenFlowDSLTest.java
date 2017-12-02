@@ -41,7 +41,7 @@ public class KubernetesMavenFlowDSLTest extends AbstractKubernetesPipelineTest {
 
     @Test
     public void sampleRepoCDBuild() throws Exception {
-        String defaultBranch = "pod-template-by-name";
+        String defaultBranch = "kubernetes-inherit-from";
         String gitUrl = System.getProperty("testGitUrl");
         String branchName = System.getProperty("testGitBranch");
         if (Strings.isNullOrBlank(gitUrl)) {
