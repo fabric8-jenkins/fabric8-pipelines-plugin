@@ -19,7 +19,5 @@ def call(WaitUntilJenkinsPluginSynced.Arguments config) {
     }
   }
 
-  message = "${config.artifactId} ${config.version} released and available in the jenkins plugin archive"
-  hubotSend message: message, failOnError: false
-
+  flow.sendChat "${config.artifactId} ${config.version} released and available in the jenkins plugin archive"
 }

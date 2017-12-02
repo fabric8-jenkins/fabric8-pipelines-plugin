@@ -50,7 +50,7 @@ def call(WaitUntilPullRequestMerged.Arguments config) {
     def prj = values[1]
 
     if (rs.state == 'failure' && !notified) {
-      def message = """
+      flow.sendChat """
 Pull request was not automatically merged.  Please fix and update Pull Request to continue with release...
 ```
 git clone git@github.com:${project}.git
@@ -65,7 +65,6 @@ git push origin fixPR${id}:${branchName}
 ```
 """
 
-      hubotSend message: message, failOnError: false
       def shouldWeWait = requestResolve()
 
       if (!shouldWeWait) {

@@ -73,6 +73,8 @@
     <jenkins.test.timeout>0</jenkins.test.timeout>
 
     <!-- security settings for using -->
+    <repositoryUser>admin</repositoryUser>
+    <repositoryPassword>admin123</repositoryPassword>
     <sonatypeUser></sonatypeUser>
     <sonatypePassword></sonatypePassword>
     <jenkinsCIUser></jenkinsCIUser>
@@ -379,6 +381,7 @@
       <version>2.8</version>
       <scope>test</scope>
     </dependency>
+<!--
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>hubot-steps</artifactId>
@@ -391,6 +394,7 @@
         </exclusion>
       </exclusions>
     </dependency>
+-->
     <dependency>
       <groupId>org.csanchez.jenkins.plugins</groupId>
       <artifactId>kubernetes</artifactId>
@@ -444,6 +448,8 @@
             <pausePipeline>${pausePipeline}</pausePipeline>
             <jenkins.test.timeout>${jenkins.test.timeout}</jenkins.test.timeout>
 
+            <repositoryUser>${repositoryUser}</repositoryUser>
+            <repositoryPassword>${repositoryPassword}</repositoryPassword>
             <sonatypeUser>${sonatypeUser}</sonatypeUser>
             <sonatypePassword>${sonatypePassword}</sonatypePassword>
             <jenkinsCIUser>${jenkinsCIUser}</jenkinsCIUser>
@@ -482,6 +488,8 @@
             <pausePipeline>${pausePipeline}</pausePipeline>
             <jenkins.test.timeout>${jenkins.test.timeout}</jenkins.test.timeout>
 
+            <repositoryUser>${repositoryUser}</repositoryUser>
+            <repositoryPassword>${repositoryPassword}</repositoryPassword>
             <sonatypeUser>${sonatypeUser}</sonatypeUser>
             <sonatypePassword>${sonatypePassword}</sonatypePassword>
             <jenkinsCIUser>${jenkinsCIUser}</jenkinsCIUser>

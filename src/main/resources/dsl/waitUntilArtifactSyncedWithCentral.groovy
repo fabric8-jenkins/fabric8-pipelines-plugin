@@ -23,8 +23,7 @@ def call(WaitUntilArtifactSyncedWithCentral.Arguments config) {
       }
     }
 
-    message = "${config.artifactId} ${config.version} released and available in maven central"
-    hubotSend message: message, failOnError: false
+    flow.sendChat "${config.artifactId} ${config.version} released and available in maven central"
   } else {
     echo "required properties missing groupId: ${groupId}, artifactId: ${artifactId}, version: ${version}"
   }

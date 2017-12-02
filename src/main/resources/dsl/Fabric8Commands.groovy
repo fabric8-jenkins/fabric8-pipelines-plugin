@@ -1015,4 +1015,12 @@ def dockerRegistryHostAndPort(String defaultRegistryHost = "fabric8-docker-regis
   return registryHost
 }
 
+def sendChat(String message, String room = null, boolean failOnError = false) {
+  if (!room) {
+    room = "release"
+  }
+  // TODO call hubotSend now
+  println "CHAT: ${room}: ${message}"
+}
+
 return this

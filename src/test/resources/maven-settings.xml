@@ -16,14 +16,24 @@
 
   <servers>
     <server>
+      <id>artifact-repo-staging</id>
+      <username>${repositoryUser}</username>
+      <password>${repositoryPassword}</password>
+    </server>
+    <server>
+      <id>artifact-repo-snapshots</id>
+      <username>${repositoryUser}</username>
+      <password>${repositoryPassword}</password>
+    </server>
+    <server>
       <id>local-repo</id>
-      <username>admin</username>
-      <password>admin123</password>
+      <username>${repositoryUser}</username>
+      <password>${repositoryPassword}</password>
     </server>
     <server>
       <id>nexus</id>
-      <username>admin</username>
-      <password>admin123</password>
+      <username>${repositoryUser}</username>
+      <password>${repositoryPassword}</password>
     </server>
     <server>
       <id>docker.io</id>

@@ -32,6 +32,7 @@ import io.fabric8.kubernetes.api.model.QuantityBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.utils.IOHelpers;
 import io.fabric8.utils.Strings;
@@ -175,6 +176,10 @@ public class AbstractKubernetesPipelineTest {
         Service repositoryService = client.services().withName("artifact-repository").get();
         if (repositoryService == null) {
             runCommands("kubectl", "apply", "-f", "http://central.maven.org/maven2/io/fabric8/apps/nexus-app/1.0.1/nexus-app-1.0.1-kubernetes.yml");
+        }
+        Deployment exposeController = client.extensions().deployments().withName("exposecontroller").get();
+        if (exposeController == null) {
+            runCommands("kubectl", "apply", "-f", "http://central.maven.org/maven2/io/fabric8/apps/exposecontroller-app/3.0.11/exposecontroller-app-3.0.11-kubernetes.yml");
         }
         PersistentVolumeClaim pvc = client.persistentVolumeClaims().withName(JENKINS_MVN_LOCAL_REPO).get();
         if (pvc == null) {
