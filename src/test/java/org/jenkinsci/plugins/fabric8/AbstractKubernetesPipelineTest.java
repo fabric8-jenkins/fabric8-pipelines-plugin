@@ -25,8 +25,11 @@
 package org.jenkinsci.plugins.fabric8;
 
 import com.google.common.collect.ImmutableMap;
+import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
+import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.PodList;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.QuantityBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -35,7 +38,6 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.utils.IOHelpers;
-import io.fabric8.utils.Strings;
 import jenkins.model.JenkinsLocationConfiguration;
 import org.apache.commons.compress.utils.IOUtils;
 import org.csanchez.jenkins.plugins.kubernetes.ContainerTemplate;
@@ -77,6 +79,8 @@ public class AbstractKubernetesPipelineTest {
     public static final String JENKINS_SSH_CONFIG = "jenkins-ssh-config";
     public static final String JENKINS_GIT_SSH = "jenkins-git-ssh";
     public static final String FABRIC8_DOCKER_REGISTRY = "fabric8-docker-registry";
+    public static final String NEXUS_STORAGE = "nexus-storage";
+    public static final String NEXUS = "nexus";
 
     @ClassRule
     public static BuildWatcher buildWatcher = new BuildWatcher();
@@ -169,13 +173,31 @@ public class AbstractKubernetesPipelineTest {
     }
 
     private void createSecretsAndPVCs(KubernetesClient client) throws IOException, InterruptedException {
+        // lets delete the PVC for nexus storage and bounce the nexus pod to ensure we can re-deploy the same version of the release
+        Deployment nexus = client.extensions().deployments().withName(NEXUS).get();
+        if (nexus == null) {
+            runCommands("kubectl", "apply", "-f", "http://central.maven.org/maven2/io/fabric8/apps/nexus-app/1.0.1/nexus-app-1.0.1-kubernetes.yml");
+        } else {
+            // TODO rather than having to trash the PVC each time we maybe could look at forcing a unique version for each release without doing a git push of new versions?
+            System.out.println("Scaling down nexus");
+            client.extensions().deployments().withName(NEXUS).scale(0);
+
+            waitForNumberOfPodsWithLabel(client, 0, "project", "nexus-app");
+
+            PersistentVolumeClaim nexusPvc = client.persistentVolumeClaims().withName(NEXUS_STORAGE).get();
+            if (nexusPvc != null) {
+                System.out.println("Removing nexus storage PVC");
+                client.persistentVolumeClaims().withName(NEXUS_STORAGE).delete();
+            }
+
+            runCommands("kubectl", "apply", "-f", "http://central.maven.org/maven2/io/fabric8/apps/nexus-app/1.0.1/nexus-app-1.0.1-kubernetes.yml");
+        }
+
+        waitForNumberOfPodsWithLabel(client, 1, "project", "nexus-app");
+
         Service registryService = client.services().withName(FABRIC8_DOCKER_REGISTRY).get();
         if (registryService == null) {
             runCommands("kubectl", "apply", "-f", "http://central.maven.org/maven2/io/fabric8/apps/docker-registry/1.0.1/docker-registry-1.0.1-kubernetes.yml");
-        }
-        Service repositoryService = client.services().withName("artifact-repository").get();
-        if (repositoryService == null) {
-            runCommands("kubectl", "apply", "-f", "http://central.maven.org/maven2/io/fabric8/apps/nexus-app/1.0.1/nexus-app-1.0.1-kubernetes.yml");
         }
         Deployment exposeController = client.extensions().deployments().withName("exposecontroller").get();
         if (exposeController == null) {
@@ -216,6 +238,45 @@ public class AbstractKubernetesPipelineTest {
         String sshKeyName = System.getProperty("sshKeyName", "ssh-key");
         Map<String, String> sshFileMap = createUserHomeSubDirFiles(".ssh", sshKeyName, sshKeyName + ".pub");
         createOrReplaceSecret(client, JENKINS_GIT_SSH, ImmutableMap.of("ssh-key", sshFileMap.getOrDefault(sshKeyName, ""), "ssh-key.pub", sshFileMap.getOrDefault(sshKeyName + ".pub", "")));
+    }
+
+    private void waitForNumberOfPodsWithLabel(KubernetesClient client, int expectedCount, String label, String labelValue) {
+        System.out.println("Waiting for " + expectedCount + " pods with label " + label + "=" + labelValue);
+        while (true) {
+            PodList podList = client.pods().withLabel(label, labelValue).list();
+            if (podList != null) {
+                List<Pod> items = podList.getItems();
+                if (items != null) {
+                    List<Pod> readyPods = filterReadyPods(items);
+                    int size = readyPods.size();
+                    System.out.println("Has " + size + " ready pod(s)");
+                    if (expectedCount == 0) {
+                        if (size == 0) {
+                            break;
+                        }
+                    } else {
+                        if (size >= expectedCount) {
+                            break;
+                        }
+                    }
+                }
+            }
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                // ignore
+            }
+        }
+    }
+
+    private List<Pod> filterReadyPods(List<Pod> items) {
+        List<Pod> answer = new ArrayList<>();
+        for (Pod pod : items) {
+            if (KubernetesHelper.isPodReady(pod)) {
+                answer.add(pod);
+            }
+        }
+        return answer;
     }
 
     public int runCommands(String... commands) throws IOException, InterruptedException {
