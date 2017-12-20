@@ -14,43 +14,44 @@ def call(WaitUntilPullRequestMerged.Arguments config) {
   def notified = false
 
   // wait until the PR is merged, if there's a merge conflict the notify and wait until PR is finally merged
-  waitUntil {
-    echo "https://api.github.com/repos/${project}/pulls/${id}"
+  return flow.doStepExecution(config.stepExtension) {
+    waitUntil {
+      echo "https://api.github.com/repos/${project}/pulls/${id}"
 
-    def apiUrl = new URL("https://api.github.com/repos/${project}/pulls/${id}")
+      def apiUrl = new URL("https://api.github.com/repos/${project}/pulls/${id}")
 
-    def rs = restGetURL {
-      authString = githubToken
-      url = apiUrl
-    }
+      def rs = restGetURL {
+        authString = githubToken
+        url = apiUrl
+      }
 
-    if (rs.merged == true) {
-      echo "PR ${id} merged"
-      return true
-    }
+      if (rs.merged == true) {
+        echo "PR ${id} merged"
+        return true
+      }
 
-    if (rs.state == 'closed') {
-      echo "PR ${id} closed"
-      return true
-    }
+      if (rs.state == 'closed') {
+        echo "PR ${id} closed"
+        return true
+      }
 
-    branchName = rs.head.ref
-    def sha = rs.head.sha
-    echo "checking status of commit ${sha}"
+      branchName = rs.head.ref
+      def sha = rs.head.sha
+      echo "checking status of commit ${sha}"
 
-    apiUrl = new URL("https://api.github.com/repos/${project}/commits/${sha}/status")
-    rs = restGetURL {
-      authString = githubToken
-      url = apiUrl
-    }
+      apiUrl = new URL("https://api.github.com/repos/${project}/commits/${sha}/status")
+      rs = restGetURL {
+        authString = githubToken
+        url = apiUrl
+      }
 
-    echo "${project} Pull request ${id} state ${rs.state}"
+      echo "${project} Pull request ${id} state ${rs.state}"
 
-    def values = project.split('/')
-    def prj = values[1]
+      def values = project.split('/')
+      def prj = values[1]
 
-    if (rs.state == 'failure' && !notified) {
-      flow.sendChat """
+      if (rs.state == 'failure' && !notified) {
+        flow.sendChat """
 Pull request was not automatically merged.  Please fix and update Pull Request to continue with release...
 ```
 git clone git@github.com:${project}.git
@@ -65,25 +66,26 @@ git push origin fixPR${id}:${branchName}
 ```
 """
 
-      def shouldWeWait = requestResolve()
+        def shouldWeWait = requestResolve()
 
-      if (!shouldWeWait) {
-        return true
+        if (!shouldWeWait) {
+          return true
+        }
+        notified = true
       }
-      notified = true
+      rs.state == 'success'
     }
-    rs.state == 'success'
-  }
-  try {
-    // clean up
-    deleteGitHubBranch {
-      authString = githubToken
-      branch = branchName
-      project = prj
-    }
+    try {
+      // clean up
+      deleteGitHubBranch {
+        authString = githubToken
+        branch = branchName
+        project = prj
+      }
 
-  } catch (err) {
-    echo "not able to delete repo: ${err}"
+    } catch (err) {
+      echo "not able to delete repo: ${err}"
+    }
   }
 }
 

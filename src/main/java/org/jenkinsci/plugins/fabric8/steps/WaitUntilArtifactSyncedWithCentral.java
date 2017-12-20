@@ -20,6 +20,7 @@ import io.jenkins.functions.Argument;
 import io.jenkins.functions.Step;
 import org.jenkinsci.plugins.fabric8.CommandSupport;
 import org.jenkinsci.plugins.fabric8.Fabric8Commands;
+import org.jenkinsci.plugins.fabric8.StepExtension;
 import org.jenkinsci.plugins.fabric8.model.ServiceConstants;
 
 import javax.validation.constraints.NotEmpty;
@@ -78,13 +79,16 @@ public class WaitUntilArtifactSyncedWithCentral extends CommandSupport implement
         @Argument
         private String extension = "jar";
 
+        private StepExtension stepExtension;
+
         public Arguments() {
         }
 
-        public Arguments(String groupId, String artifactId, String version) {
+        public Arguments(String groupId, String artifactId, String version, StepExtension stepExtension) {
             this.groupId = groupId;
             this.artifactId = artifactId;
             this.version = version;
+            this.stepExtension = stepExtension;
         }
 
         @Override
@@ -145,6 +149,14 @@ public class WaitUntilArtifactSyncedWithCentral extends CommandSupport implement
 
         public void setExtension(String extension) {
             this.extension = extension;
+        }
+
+        public StepExtension getStepExtension() {
+            return stepExtension;
+        }
+
+        public void setStepExtension(StepExtension stepExtension) {
+            this.stepExtension = stepExtension;
         }
     }
 

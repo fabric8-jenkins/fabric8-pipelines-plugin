@@ -3,6 +3,7 @@ package dsl
 import io.fabric8.utils.Strings
 import org.jenkinsci.plugins.fabric8.FailedBuildException
 import org.jenkinsci.plugins.fabric8.ShellFacade
+import org.jenkinsci.plugins.fabric8.StepExtension
 import org.jenkinsci.plugins.fabric8.Utils
 import org.jenkinsci.plugins.fabric8.helpers.GitHelper
 import org.jenkinsci.plugins.fabric8.helpers.GitRepositoryInfo
@@ -11,10 +12,39 @@ import org.jenkinsci.plugins.fabric8.steps.MavenFlow
 import org.jenkinsci.plugins.fabric8.steps.ReleaseProject
 import org.jenkinsci.plugins.fabric8.steps.StageProject
 
-def call(Map config = [:]) {
+
+def call(Map config = [:], body) {
+
+  def promote = new StepExtension()
+
+  MavenFlow.Arguments arguments = MavenFlow.Arguments.newInstance(config);
+
+  config["promoteArtifacts"] = createExtensionFunction(arguments.getPromoteArtifactsExtension())
+  config["promoteImages"] = createExtensionFunction(arguments.getPromoteImagesExtension())
+  config["tagImages"] = createExtensionFunction(arguments.getTagImagesExtension())
+  config["waitUntilArtifactsSynced"] = createExtensionFunction(arguments.getWaitUntilArtifactSyncedExtension())
+  config["waitUntilPullRequestMerged"] = createExtensionFunction(arguments.getWaitUntilPullRequestMergedExtension())
+
+  //def bodyBlock = new MavenFlowBody()
+  if (body) {
+    def bodyBlock = config
+    body.resolveStrategy = Closure.DELEGATE_FIRST
+    body.delegate = bodyBlock
+    body()
+  }
+
+  removeClosures(config)
+
   echo "mavenFlow ${config}"
 
+  println "has promote ${promote}"
 
+  if (promote.stepsBlock) {
+    println "START Invoking promote steps"
+    def block = promote.stepsBlock
+    block()
+    println "END Invoking promote steps"
+  }
   def pauseOnFailure = config.get('pauseOnFailure', false)
   def pauseOnSuccess = config.get('pauseOnSuccess', false)
 
@@ -24,8 +54,6 @@ def call(Map config = [:]) {
     utils = createUtils()
     def branch = findBranch()
     utils.setBranch(branch)
-
-    MavenFlow.Arguments arguments = MavenFlow.Arguments.newInstance(config);
 
     if (!arguments.gitCloneUrl) {
       arguments.gitCloneUrl = doFindGitCloneURL()
@@ -56,6 +84,17 @@ def call(Map config = [:]) {
   }
 }
 
+class MavenFlowBody {
+  def promoteExtension = new StepExtension()
+
+  def promote(body) {
+    println("Invoking promote() on PromoteBBody")
+    
+    body.resolveStrategy = Closure.DELEGATE_FIRST
+    body.delegate = promoteExtension
+    body()
+  }
+}
 
 Utils createUtils() {
   def u = new Utils()
@@ -272,3 +311,22 @@ def logError(String message, Throwable t) {
 def warning(String message) {
   println "WARNING: ${message}"
 }
+
+def createExtensionFunction(StepExtension extension) {
+  return { stepBody ->
+    stepBody.resolveStrategy = Closure.DELEGATE_FIRST
+    stepBody.delegate = extension
+    stepBody()
+  }
+}
+
+def removeClosures(Map config) {
+  def answer = [:]
+  for (e in config) {
+    if (!(e.value instanceof Closure)) {
+      answer[e.key] = e.value
+    }
+  }
+  return answer
+}
+

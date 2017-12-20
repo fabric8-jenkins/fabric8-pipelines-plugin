@@ -39,12 +39,20 @@ public class MavenFlowDSLTest {
     @Rule
     public GitSampleRepoRule sampleRepo = new GitSampleRepoRule();
 
-    @Ignore
+    //@Ignore
+    @Test
     public void smokeTests() throws Exception {
 
         sampleRepo.init();
         sampleRepo.write("Jenkinsfile", "node {\n" +
-                "  mavenFlow {\n" +
+                "  mavenFlow (cdOrganisation: 'cheese') {\n" +
+                //"  mavenFlow {\n" +
+                //"    cdOrganisation 'cheese'\n" +
+                "    promoteArtifacts {\n" +
+                "      steps {\n" +
+                "        echo \"replacement promote steps\"\n" +
+                "      }\n" +
+                "    }\n" +
                 "  }\n" +
                 "}\n");
         sampleRepo.git("add", "Jenkinsfile");

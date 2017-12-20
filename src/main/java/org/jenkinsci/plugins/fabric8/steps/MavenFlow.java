@@ -20,6 +20,7 @@ import io.fabric8.utils.Strings;
 import io.jenkins.functions.Argument;
 import io.jenkins.functions.Step;
 import org.jenkinsci.plugins.fabric8.CommandSupport;
+import org.jenkinsci.plugins.fabric8.StepExtension;
 import org.jenkinsci.plugins.fabric8.Utils;
 import org.jenkinsci.plugins.fabric8.helpers.ConfigHelper;
 import org.jenkinsci.plugins.fabric8.helpers.GitHelper;
@@ -222,6 +223,12 @@ public class MavenFlow extends CommandSupport implements Function<MavenFlow.Argu
         @Argument
         private List<String> mavenProfiles = new ArrayList<>();
 
+        private StepExtension promoteArtifactsExtension = new StepExtension();
+        private StepExtension promoteImagesExtension = new StepExtension();
+        private StepExtension tagImagesExtension = new StepExtension();
+        private StepExtension waitUntilPullRequestMergedExtension = new StepExtension();
+        private StepExtension waitUntilArtifactSyncedExtension = new StepExtension();
+
         
         public static Arguments newInstance(Map map) {
             Arguments arguments = new Arguments();
@@ -291,6 +298,12 @@ public class MavenFlow extends CommandSupport implements Function<MavenFlow.Argu
             answer.setPromoteToDockerRegistry(getPromoteToDockerRegistry());
             answer.setRepositoryToWaitFor(getRepositoryToWaitFor());
             answer.setUpdateNextDevelopmentVersion(isUpdateNextDevelopmentVersion());
+
+            answer.setPromoteArtifactsExtension(getPromoteArtifactsExtension());
+            answer.setPromoteImagesExtension(getPromoteImagesExtension());
+            answer.setTagImagesExtension(getTagImagesExtension());
+            answer.setWaitUntilArtifactSyncedExtension(getWaitUntilArtifactSyncedExtension());
+            answer.setWaitUntilPullRequestMergedExtension(getWaitUntilPullRequestMergedExtension());
             return answer;
         }
 
@@ -492,6 +505,46 @@ public class MavenFlow extends CommandSupport implements Function<MavenFlow.Argu
 
         public void setMavenProfiles(List<String> mavenProfiles) {
             this.mavenProfiles = mavenProfiles;
+        }
+
+        public StepExtension getPromoteArtifactsExtension() {
+            return promoteArtifactsExtension;
+        }
+
+        public void setPromoteArtifactsExtension(StepExtension promoteArtifactsExtension) {
+            this.promoteArtifactsExtension = promoteArtifactsExtension;
+        }
+
+        public StepExtension getPromoteImagesExtension() {
+            return promoteImagesExtension;
+        }
+
+        public void setPromoteImagesExtension(StepExtension promoteImagesExtension) {
+            this.promoteImagesExtension = promoteImagesExtension;
+        }
+
+        public StepExtension getTagImagesExtension() {
+            return tagImagesExtension;
+        }
+
+        public void setTagImagesExtension(StepExtension tagImagesExtension) {
+            this.tagImagesExtension = tagImagesExtension;
+        }
+
+        public StepExtension getWaitUntilPullRequestMergedExtension() {
+            return waitUntilPullRequestMergedExtension;
+        }
+
+        public void setWaitUntilPullRequestMergedExtension(StepExtension waitUntilPullRequestMergedExtension) {
+            this.waitUntilPullRequestMergedExtension = waitUntilPullRequestMergedExtension;
+        }
+
+        public StepExtension getWaitUntilArtifactSyncedExtension() {
+            return waitUntilArtifactSyncedExtension;
+        }
+
+        public void setWaitUntilArtifactSyncedExtension(StepExtension waitUntilArtifactSyncedExtension) {
+            this.waitUntilArtifactSyncedExtension = waitUntilArtifactSyncedExtension;
         }
     }
 }

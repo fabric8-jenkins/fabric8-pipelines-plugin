@@ -65,6 +65,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.jenkinsci.plugins.fabric8.KubernetesTestUtil.TESTING_NAMESPACE;
 import static org.jenkinsci.plugins.fabric8.KubernetesTestUtil.assumeKubernetes;
 import static org.jenkinsci.plugins.fabric8.KubernetesTestUtil.setupCloud;
 import static org.jenkinsci.plugins.fabric8.support.KubeHelpers.setEnvVar;
@@ -176,7 +177,7 @@ public class AbstractKubernetesPipelineTest {
         // lets delete the PVC for nexus storage and bounce the nexus pod to ensure we can re-deploy the same version of the release
         Deployment nexus = client.extensions().deployments().withName(NEXUS).get();
         if (nexus == null) {
-            runCommands("kubectl", "apply", "-f", "http://central.maven.org/maven2/io/fabric8/apps/nexus-app/1.0.1/nexus-app-1.0.1-kubernetes.yml");
+            runCommands("kubectl", "apply", "-n", TESTING_NAMESPACE, "-f", "http://central.maven.org/maven2/io/fabric8/apps/nexus-app/1.0.1/nexus-app-1.0.1-kubernetes.yml");
         } else {
             // TODO rather than having to trash the PVC each time we maybe could look at forcing a unique version for each release without doing a git push of new versions?
             System.out.println("Scaling down nexus");
@@ -190,20 +191,20 @@ public class AbstractKubernetesPipelineTest {
                 client.persistentVolumeClaims().withName(NEXUS_STORAGE).delete();
             }
 
-            runCommands("kubectl", "apply", "-f", "http://central.maven.org/maven2/io/fabric8/apps/nexus-app/1.0.1/nexus-app-1.0.1-kubernetes.yml");
+            runCommands("kubectl", "apply", "-n", TESTING_NAMESPACE, "-f", "http://central.maven.org/maven2/io/fabric8/apps/nexus-app/1.0.1/nexus-app-1.0.1-kubernetes.yml");
         }
 
         waitForNumberOfPodsWithLabel(client, 1, "project", "nexus-app");
 
         Service registryService = client.services().withName(FABRIC8_DOCKER_REGISTRY).get();
         if (registryService == null) {
-            runCommands("kubectl", "apply", "-f", "http://central.maven.org/maven2/io/fabric8/apps/docker-registry/1.0.1/docker-registry-1.0.1-kubernetes.yml");
+            runCommands("kubectl", "apply", "-n", TESTING_NAMESPACE, "-f", "http://central.maven.org/maven2/io/fabric8/apps/docker-registry/1.0.1/docker-registry-1.0.1-kubernetes.yml");
         }
         Deployment exposeController = client.extensions().deployments().withName("exposecontroller").get();
         if (exposeController == null) {
-            runCommands("kubectl", "apply", "-f", "http://central.maven.org/maven2/io/fabric8/apps/exposecontroller-app/3.0.11/exposecontroller-app-3.0.11-kubernetes.yml");
+            runCommands("kubectl", "apply", "-n", TESTING_NAMESPACE, "-f", "http://central.maven.org/maven2/io/fabric8/apps/exposecontroller-app/3.0.11/exposecontroller-app-3.0.11-kubernetes.yml");
         }
-        PersistentVolumeClaim pvc = client.persistentVolumeClaims().withName(JENKINS_MVN_LOCAL_REPO).get();
+        PersistentVolumeClaim pvc = client.persistentVolumeClaims().inNamespace(TESTING_NAMESPACE).withName(JENKINS_MVN_LOCAL_REPO).get();
         if (pvc == null) {
             Map<String, Quantity> requestMap = new HashMap<>();
             requestMap.put("storage", new QuantityBuilder().withAmount("200").withFormat("Gi").build());
@@ -212,7 +213,7 @@ public class AbstractKubernetesPipelineTest {
                     withNewMetadata().withName(JENKINS_MVN_LOCAL_REPO).addToLabels("app", "jenkins").endMetadata().
                     withNewSpec().withAccessModes("ReadWriteMany").
                     withNewResources().withRequests(requestMap).endResources().endSpec().build();
-            client.persistentVolumeClaims().create(pvc);
+            client.persistentVolumeClaims().inNamespace(TESTING_NAMESPACE).create(pvc);
         }
 
         createOrReplaceSecret(client, JENKINS_MAVEN_SETTINGS, ImmutableMap.of("settings.xml", testClassesFileContent("maven-settings.xml")));

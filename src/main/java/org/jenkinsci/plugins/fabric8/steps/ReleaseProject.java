@@ -19,6 +19,7 @@ import io.fabric8.utils.Strings;
 import io.jenkins.functions.Argument;
 import io.jenkins.functions.Step;
 import org.jenkinsci.plugins.fabric8.CommandSupport;
+import org.jenkinsci.plugins.fabric8.StepExtension;
 import org.jenkinsci.plugins.fabric8.helpers.ConfigHelper;
 import org.jenkinsci.plugins.fabric8.model.ServiceConstants;
 import org.jenkinsci.plugins.fabric8.model.StagedProjectInfo;
@@ -105,6 +106,12 @@ public class ReleaseProject extends CommandSupport implements Function<ReleasePr
         @Argument
         private String updateNextDevelopmentVersionArguments = "";
 
+        private StepExtension promoteArtifactsExtension;
+        private StepExtension promoteImagesExtension;
+        private StepExtension tagImagesExtension;
+        private StepExtension waitUntilPullRequestMergedExtension;
+        private StepExtension waitUntilArtifactSyncedExtension;
+
         public static Arguments newInstance(Map<String,Object> map) {
             Arguments answer = new Arguments();
             ConfigHelper.populateBeanFromConfiguration(answer, map);
@@ -142,7 +149,7 @@ public class ReleaseProject extends CommandSupport implements Function<ReleasePr
          * Returns the arguments for invoking {@link PromoteArtifacts}
          */
         public PromoteArtifacts.Arguments createPromoteArtifactsArguments() {
-            return new PromoteArtifacts.Arguments(getProject(), getReleaseVersion(), getRepoIds(), getContainerName(), isHelmPush(), isUpdateNextDevelopmentVersion(), getUpdateNextDevelopmentVersionArguments());
+            return new PromoteArtifacts.Arguments(getProject(), getReleaseVersion(), getRepoIds(), getContainerName(), isHelmPush(), isUpdateNextDevelopmentVersion(), getUpdateNextDevelopmentVersionArguments(), getPromoteArtifactsExtension());
         }
 
         /**
@@ -153,7 +160,7 @@ public class ReleaseProject extends CommandSupport implements Function<ReleasePr
             String org = getDockerOrganisation();
             String toRegistry = getPromoteToDockerRegistry();
             List<String> images = getPromoteDockerImages();
-            return new PromoteImages.Arguments(getReleaseVersion(), org, toRegistry, images);
+            return new PromoteImages.Arguments(getReleaseVersion(), org, toRegistry, images, getPromoteImagesExtension());
         }
 
         /**
@@ -161,7 +168,7 @@ public class ReleaseProject extends CommandSupport implements Function<ReleasePr
          */
         public TagImages.Arguments createTagImagesArguments() {
             if (extraImagesToTag != null && !extraImagesToTag.isEmpty()) {
-                return new TagImages.Arguments(getReleaseVersion(), extraImagesToTag);
+                return new TagImages.Arguments(getReleaseVersion(), extraImagesToTag, getTagImagesExtension());
             } else {
                 return null;
             }
@@ -173,14 +180,14 @@ public class ReleaseProject extends CommandSupport implements Function<ReleasePr
          * @param pullRequestId
          */
         public WaitUntilPullRequestMerged.Arguments createWaitUntilPullRequestMergedArguments(GHPullRequest pullRequestId) {
-            return new WaitUntilPullRequestMerged.Arguments(pullRequestId.getId(), getProject());
+            return new WaitUntilPullRequestMerged.Arguments(pullRequestId.getId(), getProject(), getWaitUntilPullRequestMergedExtension());
         }
 
         /**
          * Returns the arguments for invoking {@link WaitUntilArtifactSyncedWithCentral}
          */
         public WaitUntilArtifactSyncedWithCentral.Arguments createWaitUntilArtifactSyncedWithCentralArguments() {
-            WaitUntilArtifactSyncedWithCentral.Arguments arguments = new WaitUntilArtifactSyncedWithCentral.Arguments(groupId, artifactIdToWaitFor, getReleaseVersion());
+            WaitUntilArtifactSyncedWithCentral.Arguments arguments = new WaitUntilArtifactSyncedWithCentral.Arguments(groupId, artifactIdToWaitFor, getReleaseVersion(), getWaitUntilArtifactSyncedExtension());
             if (Strings.notEmpty(artifactExtensionToWaitFor)) {
                 arguments.setExtension(artifactExtensionToWaitFor);
             }
@@ -319,6 +326,46 @@ public class ReleaseProject extends CommandSupport implements Function<ReleasePr
 
         public void setUpdateNextDevelopmentVersionArguments(String updateNextDevelopmentVersionArguments) {
             this.updateNextDevelopmentVersionArguments = updateNextDevelopmentVersionArguments;
+        }
+
+        public StepExtension getPromoteArtifactsExtension() {
+            return promoteArtifactsExtension;
+        }
+
+        public void setPromoteArtifactsExtension(StepExtension promoteArtifactsExtension) {
+            this.promoteArtifactsExtension = promoteArtifactsExtension;
+        }
+
+        public StepExtension getPromoteImagesExtension() {
+            return promoteImagesExtension;
+        }
+
+        public void setPromoteImagesExtension(StepExtension promoteImagesExtension) {
+            this.promoteImagesExtension = promoteImagesExtension;
+        }
+
+        public StepExtension getTagImagesExtension() {
+            return tagImagesExtension;
+        }
+
+        public void setTagImagesExtension(StepExtension tagImagesExtension) {
+            this.tagImagesExtension = tagImagesExtension;
+        }
+
+        public StepExtension getWaitUntilPullRequestMergedExtension() {
+            return waitUntilPullRequestMergedExtension;
+        }
+
+        public void setWaitUntilPullRequestMergedExtension(StepExtension waitUntilPullRequestMergedExtension) {
+            this.waitUntilPullRequestMergedExtension = waitUntilPullRequestMergedExtension;
+        }
+
+        public StepExtension getWaitUntilArtifactSyncedExtension() {
+            return waitUntilArtifactSyncedExtension;
+        }
+
+        public void setWaitUntilArtifactSyncedExtension(StepExtension waitUntilArtifactSyncedExtension) {
+            this.waitUntilArtifactSyncedExtension = waitUntilArtifactSyncedExtension;
         }
     }
 }

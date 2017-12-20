@@ -14,18 +14,19 @@ def call(WaitUntilArtifactSyncedWithCentral.Arguments config) {
   def repo = config.repositoryUrl ?: ServiceConstants.MAVEN_CENTRAL
   def ext = config.extension ?: 'jar'
 
-  if (groupId && artifactId && version) {
-    echo "waiting for artifact ${groupId}/${artifactId}/${version}/${ext} to be in repo ${repo}"
+  return flow.doStepExecution(config.stepExtension) {
+    if (groupId && artifactId && version) {
+      echo "waiting for artifact ${groupId}/${artifactId}/${version}/${ext} to be in repo ${repo}"
 
-    waitUntil {
-      retry(3) {
-        flow.isArtifactAvailableInRepo(repo, groupId.replaceAll('\\.', '/'), artifactId, version, ext)
+      waitUntil {
+        retry(3) {
+          flow.isArtifactAvailableInRepo(repo, groupId.replaceAll('\\.', '/'), artifactId, version, ext)
+        }
       }
+
+      flow.sendChat "${config.artifactId} ${config.version} released and available in maven central"
+    } else {
+      echo "required properties missing groupId: ${groupId}, artifactId: ${artifactId}, version: ${version}"
     }
-
-    flow.sendChat "${config.artifactId} ${config.version} released and available in maven central"
-  } else {
-    echo "required properties missing groupId: ${groupId}, artifactId: ${artifactId}, version: ${version}"
   }
-
 }

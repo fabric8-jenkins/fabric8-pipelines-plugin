@@ -21,6 +21,7 @@ import io.jenkins.functions.Step;
 import org.jenkinsci.plugins.fabric8.CommandSupport;
 import org.jenkinsci.plugins.fabric8.Fabric8Commands;
 import org.jenkinsci.plugins.fabric8.FailedBuildException;
+import org.jenkinsci.plugins.fabric8.StepExtension;
 import org.jenkinsci.plugins.fabric8.helpers.GitHelper;
 import org.kohsuke.github.GHCommitPointer;
 import org.kohsuke.github.GHIssueState;
@@ -146,12 +147,15 @@ public class WaitUntilPullRequestMerged extends CommandSupport implements Functi
         @NotEmpty
         private String project = "";
 
+        private StepExtension stepExtension;
+
         public Arguments() {
         }
 
-        public Arguments(int id, String project) {
+        public Arguments(int id, String project, StepExtension stepExtension) {
             this.id = id;
             this.project = project;
+            this.stepExtension = stepExtension;
         }
 
         @Override
@@ -176,6 +180,14 @@ public class WaitUntilPullRequestMerged extends CommandSupport implements Functi
 
         public void setProject(String project) {
             this.project = project;
+        }
+
+        public StepExtension getStepExtension() {
+            return stepExtension;
+        }
+
+        public void setStepExtension(StepExtension stepExtension) {
+            this.stepExtension = stepExtension;
         }
     }
 
