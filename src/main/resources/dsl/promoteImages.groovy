@@ -18,21 +18,23 @@ def call(PromoteImages.Arguments config) {
   def tag = config.tag
   def toRegistry = config.toRegistry
 
-  if (tag && toRegistry) {
-    container(config.containerName) {
-      for (int i = 0; i < images.size(); i++) {
-        image = images[i]
+  return flow.doStepExecution(config.stepExtension) {
+    if (tag && toRegistry) {
+      container(config.containerName) {
+        for (int i = 0; i < images.size(); i++) {
+          image = images[i]
 
-        // if we're running on a single node then we already have the image on this host so no need to pull image
-        if (flow.isSingleNode()) {
-          sh "docker tag ${org}/${image}:${tag} ${toRegistry}/${org}/${image}:${tag}"
-        } else {
-          sh "docker pull ${registryPrefix}fabric8/${image}:${tag}"
-          sh "docker tag ${registryPrefix}${org}/${image}:${tag} ${toRegistry}/${org}/${image}:${tag}"
-        }
+          // if we're running on a single node then we already have the image on this host so no need to pull image
+          if (flow.isSingleNode()) {
+            sh "docker tag ${org}/${image}:${tag} ${toRegistry}/${org}/${image}:${tag}"
+          } else {
+            sh "docker pull ${registryPrefix}fabric8/${image}:${tag}"
+            sh "docker tag ${registryPrefix}${org}/${image}:${tag} ${toRegistry}/${org}/${image}:${tag}"
+          }
 
-        retry(3) {
-          sh "docker push ${toRegistry}/${org}/${image}:${tag}"
+          retry(3) {
+            sh "docker push ${toRegistry}/${org}/${image}:${tag}"
+          }
         }
       }
     }

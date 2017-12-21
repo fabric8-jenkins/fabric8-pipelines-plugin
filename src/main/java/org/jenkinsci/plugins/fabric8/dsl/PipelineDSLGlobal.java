@@ -38,6 +38,11 @@ public abstract class PipelineDSLGlobal extends GlobalVariable {
                 // for exposing sh()
                 "method groovy.lang.GroovyObject invokeMethod java.lang.String java.lang.Object",
 
+                // for nested steps
+                "staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods invokeMethod java.lang.Object java.lang.String java.lang.Object",
+                "method java.util.Map remove java.lang.Object",
+                "method java.lang.Class isInstance java.lang.Object",
+
                 // for println
                 "staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods println java.lang.Object java.lang.Object",
 

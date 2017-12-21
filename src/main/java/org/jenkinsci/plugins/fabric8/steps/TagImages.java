@@ -19,6 +19,7 @@ import com.google.common.base.Strings;
 import io.jenkins.functions.Argument;
 import io.jenkins.functions.Step;
 import org.jenkinsci.plugins.fabric8.CommandSupport;
+import org.jenkinsci.plugins.fabric8.StepExtension;
 
 import javax.validation.constraints.NotEmpty;
 import java.io.Serializable;
@@ -45,7 +46,7 @@ public class TagImages extends CommandSupport implements Function<TagImages.Argu
     }
 
     public String apply(String tag, List<String> images) {
-        return apply(new Arguments(tag, images));
+        return apply(new Arguments(tag, images, null));
     }
 
     @Override
@@ -85,12 +86,15 @@ public class TagImages extends CommandSupport implements Function<TagImages.Argu
         @Argument
         private String containerName = "clients";
 
+        private StepExtension stepExtension;
+
         public Arguments() {
         }
 
-        public Arguments(String tag, List<String> images) {
+        public Arguments(String tag, List<String> images, StepExtension stepExtension) {
             this.tag = tag;
             this.images = images;
+            this.stepExtension = stepExtension;
         }
 
         public List<String> getImages() {
@@ -115,6 +119,14 @@ public class TagImages extends CommandSupport implements Function<TagImages.Argu
 
         public void setContainerName(String containerName) {
             this.containerName = containerName;
+        }
+
+        public StepExtension getStepExtension() {
+            return stepExtension;
+        }
+
+        public void setStepExtension(StepExtension stepExtension) {
+            this.stepExtension = stepExtension;
         }
     }
 }

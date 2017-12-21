@@ -8,7 +8,9 @@ import io.fabric8.kubernetes.client.KubernetesClient
 import io.fabric8.openshift.client.DefaultOpenShiftClient
 import io.fabric8.openshift.client.OpenShiftClient
 import jenkins.model.Jenkins
+import org.jenkinsci.plugins.fabric8.StepExtension
 import org.jenkinsci.plugins.fabric8.helpers.MavenHelpers
+import org.jenkinsci.plugins.workflow.steps.StepExecution
 
 import java.util.regex.Pattern
 
@@ -1022,5 +1024,33 @@ def sendChat(String message, String room = null, boolean failOnError = false) {
   // TODO call hubotSend now
   println "CHAT: ${room}: ${message}"
 }
+
+/** Invokes a step extension on the given closure body */
+def doStepExecution(StepExtension stepExtension, body) {
+  if (stepExtension == null) {
+    stepExtension = new StepExtension()
+  }
+  if (stepExtension.preBlock instanceof Closure) {
+    println "StepExtension invoking pre steps"
+    stepExtension.preBlock()
+  }
+  def answer
+  if (stepExtension.stepsBlock instanceof Closure) {
+    println "StepExtension invoking replacement steps"
+    answer = stepExtension.stepsBlock()
+  } else if (body != null) {
+    if (stepExtension.disabled) {
+      println "StepExtension has disabled the steps"
+    } else {
+      answer = body()
+    }
+  }
+  if (stepExtension.postBlock instanceof Closure) {
+    println "StepExtension invoking post steps"
+    stepExtension.postBlock()
+  }
+  return answer
+}
+
 
 return this

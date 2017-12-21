@@ -20,6 +20,7 @@ import io.jenkins.functions.Argument;
 import io.jenkins.functions.Step;
 import org.jenkinsci.plugins.fabric8.CommandSupport;
 import org.jenkinsci.plugins.fabric8.Fabric8Commands;
+import org.jenkinsci.plugins.fabric8.StepExtension;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -98,14 +99,17 @@ public class PromoteImages extends CommandSupport implements Function<PromoteIma
         @Argument
         private String containerName = "clients";
 
+        private StepExtension stepExtension;
+
         public Arguments() {
         }
 
-        public Arguments(String tag, String org, String toRegistry, List<String> images) {
+        public Arguments(String tag, String org, String toRegistry, List<String> images, StepExtension stepExtension) {
             this.tag = tag;
             this.org = org;
             this.toRegistry = toRegistry;
             this.images = images;
+            this.stepExtension = stepExtension;
         }
 
         /**
@@ -161,6 +165,14 @@ public class PromoteImages extends CommandSupport implements Function<PromoteIma
 
         public void setContainerName(String containerName) {
             this.containerName = containerName;
+        }
+
+        public StepExtension getStepExtension() {
+            return stepExtension;
+        }
+
+        public void setStepExtension(StepExtension stepExtension) {
+            this.stepExtension = stepExtension;
         }
     }
 }

@@ -19,6 +19,7 @@ import io.jenkins.functions.Argument;
 import io.jenkins.functions.Step;
 import org.jenkinsci.plugins.fabric8.CommandSupport;
 import org.jenkinsci.plugins.fabric8.Fabric8Commands;
+import org.jenkinsci.plugins.fabric8.StepExtension;
 import org.kohsuke.github.GHPullRequest;
 
 import java.io.Serializable;
@@ -92,6 +93,8 @@ public class PromoteArtifacts extends CommandSupport implements Function<Promote
         @Argument
         private String updateNextDevelopmentVersionArguments = "";
 
+        private StepExtension stepExtension;
+
         public Arguments() {
         }
 
@@ -106,7 +109,7 @@ public class PromoteArtifacts extends CommandSupport implements Function<Promote
             this.repoIds = repoIds;
         }
 
-        public Arguments(String project, String version, List<String> repoIds, String containerName, boolean helmPush, boolean updateNextDevelopmentVersion, String updateNextDevelopmentVersionArguments) {
+        public Arguments(String project, String version, List<String> repoIds, String containerName, boolean helmPush, boolean updateNextDevelopmentVersion, String updateNextDevelopmentVersionArguments, StepExtension stepExtension) {
             this.project = project;
             this.version = version;
             this.repoIds = repoIds;
@@ -114,6 +117,7 @@ public class PromoteArtifacts extends CommandSupport implements Function<Promote
             this.helmPush = helmPush;
             this.updateNextDevelopmentVersion = updateNextDevelopmentVersion;
             this.updateNextDevelopmentVersionArguments = updateNextDevelopmentVersionArguments;
+            this.stepExtension = stepExtension;
         }
 
         public String getProject() {
@@ -170,6 +174,14 @@ public class PromoteArtifacts extends CommandSupport implements Function<Promote
 
         public void setUpdateNextDevelopmentVersionArguments(String updateNextDevelopmentVersionArguments) {
             this.updateNextDevelopmentVersionArguments = updateNextDevelopmentVersionArguments;
+        }
+
+        public StepExtension getStepExtension() {
+            return stepExtension;
+        }
+
+        public void setStepExtension(StepExtension stepExtension) {
+            this.stepExtension = stepExtension;
         }
     }
 }
