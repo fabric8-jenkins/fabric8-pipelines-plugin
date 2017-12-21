@@ -6,13 +6,16 @@ pipeline {
     stage('Maven Release') {
       steps {
         mavenFlow(
-                pauseOnSuccess: "true",
-                pauseOnFailure: "true",
-
                 cdOrganisation: "fabric8-jenkins",
                 useStaging: true,
                 useSonatype: true
-        )
+        ) {
+          promoteArtifacts {
+            pre {
+              echo "====> hook invoked before promote artifacts!"
+            }
+          }
+        }
       }
     }
   }
